@@ -1,6 +1,7 @@
-package com.example.archat.model.repository;
+package com.example.archat.infrastructure.repository;
 
-import com.example.archat.model.Chat;
+import com.example.archat.domain.model.Chat;
+import com.example.archat.domain.repository.ChatRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // 1. ChatRepository로 업캐스팅
 // 2. ChatRepository의 구현 책임을 가져간다
-public class InMemoryChatRepository implements ChatRepository{
+public class InMemoryChatRepository implements ChatRepository {
     private InMemoryChatRepository() {}
 
     public static final InMemoryChatRepository instance = new InMemoryChatRepository();
@@ -23,7 +24,7 @@ public class InMemoryChatRepository implements ChatRepository{
     @Override
     public void save(Chat chat) {
         chatMap.computeIfAbsent(
-                chat.sessionId(),
+                chat.userId(),
                 k -> new ArrayList<>()
         ).add(chat);
     }

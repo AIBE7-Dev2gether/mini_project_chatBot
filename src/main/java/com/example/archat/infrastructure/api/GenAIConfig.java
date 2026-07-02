@@ -1,4 +1,4 @@
-package com.example.archat.config;
+package com.example.archat.infrastructure.api;
 
 import com.google.genai.Client;
 import com.google.genai.types.Content;

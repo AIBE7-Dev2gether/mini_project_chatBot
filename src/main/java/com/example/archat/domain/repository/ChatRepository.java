@@ -1,6 +1,6 @@
-package com.example.archat.model.repository;
+package com.example.archat.domain.repository;
 
-import com.example.archat.model.Chat;
+import com.example.archat.domain.model.Chat;
 
 import java.util.List;
 

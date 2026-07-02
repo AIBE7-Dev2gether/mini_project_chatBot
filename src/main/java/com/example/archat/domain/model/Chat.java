@@ -1,9 +1,9 @@
-package com.example.archat.model;
+package com.example.archat.domain.model;
 
 public record Chat(
         String message,
         String owner,
-        String sessionId,
+        String userId,
         String model,
         String timestamp
 ) {

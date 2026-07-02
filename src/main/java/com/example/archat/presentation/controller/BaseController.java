@@ -1,4 +1,4 @@
-package com.example.archat.controller;
+package com.example.archat.presentation.controller;
 
 import jakarta.servlet.http.HttpServlet;
 

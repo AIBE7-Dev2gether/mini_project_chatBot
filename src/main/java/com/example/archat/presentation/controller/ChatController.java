@@ -1,8 +1,8 @@
-package com.example.archat.controller;
+package com.example.archat.presentation.controller;
 
-import com.example.archat.controller.dto.ChatResponseDTO;
-import com.example.archat.model.Chat;
-import com.example.archat.service.ChatService;
+import com.example.archat.presentation.dto.ChatResponseDTO;
+import com.example.archat.domain.model.Chat;
+import com.example.archat.application.service.GeminiChatService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,12 +15,12 @@ import java.util.List;
 
 @WebServlet("/chat")
 public class ChatController extends BaseController {
-    private ChatService chatService;
+    private GeminiChatService geminiChatService;
     // init
 
     @Override
     public void init() throws ServletException {
-        chatService = ChatService.getInstance(); // Lazy Loading
+        geminiChatService = GeminiChatService.getInstance(); // Lazy Loading
         // Service, Repository : static 저장해서 관리 <- tomcat이 자원 관리 X
         // Controller(Servlet) : tomcat 관리 - @WebServlet("/chat")
     }
@@ -31,7 +31,7 @@ public class ChatController extends BaseController {
         // 접속 -> /chat
         // 데이터 불러오기
         HttpSession session = req.getSession(); // 세션 생성/불러오기 -> 유저를 구분
-        List<ChatResponseDTO> response = chatService.readHistory(session.getId())
+        List<ChatResponseDTO> response = geminiChatService.readHistory(session.getId())
                 // Stream -> map -> of(변환) -> jsp에서 최종적으로 만나게 되는...
                 .stream()
                 .map(ChatResponseDTO::of)
@@ -57,7 +57,7 @@ public class ChatController extends BaseController {
                 req.getParameter("model"),
                 ZonedDateTime.now().toString()
         );
-        chatService.sendMessage(chat);
+        geminiChatService.sendMessage(chat);
         resp.sendRedirect("%s/%s".formatted(req.getContextPath(), "chat"));
     }
 }
