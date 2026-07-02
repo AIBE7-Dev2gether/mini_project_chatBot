@@ -1,53 +1,61 @@
 # ArChat (아카이브 챗)
 
-Java Servlet과 JSP를 기반으로 작성된 챗봇 웹 애플리케이션입니다. 구글의 Gemini AI API를 활용하여 사용자의 메시지에 자동으로 답변하는 기능을 제공합니다.
+Java Servlet과 JSP를 기반으로 작성된 챗봇 웹 애플리케이션입니다. 구글의 Gemini AI API를 활용하여 사용자의 메시지에 자동으로 답변하며, Supabase(PostgreSQL)를 연동하여 채팅 내역을 안전하게 영구 저장합니다.
 
-## 프로젝트 구조 (Layered Architecture)
+## 📁 관련 문서 (Docs)
+프로젝트의 세부 설계 및 데이터베이스 구조는 `docs/` 디렉토리 내의 마크다운 문서를 참고하세요.
+* [데이터 흐름도 (Data Flow)](docs/data_flow.md)
+* [데이터베이스 스키마 및 ERD (Database Schema)](docs/database_schema.md)
 
-본 프로젝트는 비즈니스 로직과 데이터 접근을 분리하기 위해 고전적인 MVC 패턴에 Service와 Repository 계층을 추가하여 구성되어 있습니다.
+## 🏗️ 프로젝트 구조 (Layered/Hexagonal Architecture)
+
+본 프로젝트는 유지보수성과 확장성을 높이기 위해 도메인, 애플리케이션, 인프라스트럭처, 프레젠테이션 계층으로 역할을 명확히 분리하여 설계되었습니다.
 
 ```text
 archat/
+├── docs/                                    # 프로젝트 관련 문서 디렉토리
+│   ├── data_flow.md                         # 데이터 흐름도
+│   └── database_schema.md                   # DB 구조 및 ERD
 ├── src/main/java/com/example/archat/
-│   ├── config/
-│   │   └── GenAIConfig.java             # Gemini API 클라이언트 설정 및 시스템 프롬프트 관리
-│   ├── controller/
-│   │   ├── dto/
-│   │   │   └── ChatResponseDTO.java     # View(JSP)로 데이터를 전달하기 위한 DTO
-│   │   ├── BaseController.java          # 공통 뷰 경로 등 서블릿 공통 로직 관리
-│   │   └── ChatController.java          # /chat 경로 요청 처리 및 뷰 포워딩
-│   ├── model/
-│   │   ├── repository/
-│   │   │   ├── ChatRepository.java        # 채팅 데이터 저장소 인터페이스
-│   │   │   └── InMemoryChatRepository.java# ConcurrentHashMap을 이용한 메모리 저장소 구현체
-│   │   └── Chat.java                    # 채팅 메시지의 도메인 모델 (Record)
-│   └── service/
-│       └── ChatService.java             # 메시지 저장, AI 호출(useAI) 등 핵심 비즈니스 로직
+│   ├── application/                         # 비즈니스 로직 및 유즈케이스 계층
+│   │   └── service/
+│   │       └── AIChatService.java           # 채팅 저장 및 AI API 호출 통합 서비스 로직
+│   ├── domain/                              # 핵심 도메인 모델 계층
+│   │   ├── model/
+│   │   │   └── Chat.java                    # 채팅 메시지 모델 (Record)
+│   │   └── repository/
+│   │       └── ChatRepository.java          # 데이터 저장소 인터페이스
+│   ├── infrastructure/                      # 외부 API 통신 및 DB 연결 계층
+│   │   ├── api/
+│   │   │   ├── GenAIChatProvider.java       # Gemini API 호출 구현체
+│   │   │   └── GroqChatProvider.java        # Groq 등 기타 AI 호출 구현체
+│   │   ├── db/
+│   │   │   └── DatabaseUtil.java            # Supabase(PostgreSQL) JDBC 연결 관리
+│   │   └── repository/
+│   │       └── SupabaseChatRepository.java  # JDBC를 이용한 Supabase 기반 채팅 저장소 구현체
+│   └── presentation/                        # 사용자 요청 처리 계층 (Controller)
+│       └── controller/
+│           └── ChatController.java          # HTTP 요청 처리 및 뷰(JSP) 포워딩
 ├── src/main/webapp/
 │   ├── WEB-INF/
-│   │   ├── views/
-│   │   │   └── chat.jsp                 # 채팅 내역을 렌더링하는 뷰 페이지
-│   │   └── web.xml                      # 웹 애플리케이션 설정 파일
-└── pom.xml                              # Maven 의존성 관리 파일 (google-genai, jstl 등)
+│   │   └── views/
+│   │       └── chat.jsp                     # 채팅 화면을 렌더링하는 JSP 페이지
+└── pom.xml                                  # Maven 의존성 관리 (google-genai, postgresql 등)
 ```
 
-## 핵심 동작 흐름 (Data Flow)
+## 🚀 환경 변수 설정 및 실행 방법
 
-1. **클라이언트 요청**: 브라우저에서 `/chat` 으로 접속 (또는 메시지 전송 POST 요청).
-2. **Controller (컨트롤러)**: `ChatController`가 요청을 받아 세션 ID를 식별합니다.
-3. **Service (서비스)**: `ChatService`에 비즈니스 로직 처리를 위임합니다.
-   - 메시지 조회: `ChatService.readHistory(sessionId)`
-   - 메시지 전송: 사용자 메시지 저장 -> `GenAIConfig`를 통한 Gemini API 호출 -> AI 응답 저장
-4. **Repository (레포지토리)**: `InMemoryChatRepository`가 메모리(Map)상에 데이터를 Read/Write 합니다.
-5. **DTO 변환 및 View**: 반환된 도메인 모델(`Chat`)을 `ChatResponseDTO`로 변환하여 JSP로 넘기고, `chat.jsp`가 최종 HTML을 렌더링하여 클라이언트에게 응답합니다.
+이 프로젝트는 외부 API(Gemini)와 외부 데이터베이스(Supabase)를 사용합니다. Tomcat 서버를 실행하기 전 시스템 환경 변수(또는 톰캣 플러그인을 통한 `.env` 연동)에 다음 값들이 반드시 설정되어야 합니다.
 
-## 실행 방법 및 환경 변수 설정
+**필수 환경 변수:**
+- `GEMINI_API_KEY` : Google Gemini API 키
+- `SUPABASE_DB_URL` : Supabase 데이터베이스 JDBC 연결 풀러 주소 (예: `jdbc:postgresql://aws-0-[region].pooler.supabase.com:6543/postgres`)
+- `SUPABASE_DB_USER` : Supabase 데이터베이스 접속 유저 (예: `postgres.[project-ref]`)
+- `SUPABASE_DB_PASSWORD` : Supabase 데이터베이스 비밀번호
 
-본 프로젝트는 Gemini AI를 사용하므로, 실행 환경(Tomcat)에 다음 환경 변수가 반드시 등록되어야 합니다.
+> ⚠️ 보안 권고사항: GitHub 저장소에 비밀번호나 API 키가 포함된 `.env` 파일이 올라가지 않도록 주의하세요. 설정 가이드를 제공하기 위해 비밀값이 비워진 `.env.sample` 파일을 활용하시기 바랍니다.
 
-- `GEMINI_API_KEY` : 발급받은 Google Gemini API 키 값
-
-**IntelliJ에서 실행 시 설정 방법:**
-1. Tomcat Run/Debug Configurations 창 오픈
-2. Server 탭 -> `Environment variables` 항목 수정
-3. `GEMINI_API_KEY=자신의_API_키` 추가 후 서버 재시작
+## 🔧 최근 업데이트 내역
+- 메모리 기반 저장소(`InMemoryChatRepository`)에서 **Supabase 기반 영구 저장소(`SupabaseChatRepository`)**로 마이그레이션 완료
+- `docs/` 폴더 분리를 통한 문서화(ERD 다이어그램 포함) 구조 개선
+- 계층형 아키텍처 패턴 적용에 따른 패키지 구조 전면 개편
