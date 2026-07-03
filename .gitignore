@@ -41,5 +41,8 @@ build/
 ### env ###
 .env
 
+## img ###
+img
+
 ### idea ###
 .idea
