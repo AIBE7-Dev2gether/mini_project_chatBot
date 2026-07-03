@@ -30,10 +30,14 @@ public class GenAIChatProvider implements ChatProvider {
     @Override
     public String useAI(Chat newChat, List<Chat> chatHistory) {
         List<Content> contents = chatHistory.stream()
-                .map((c) -> Content.builder()
-                        .role(newChat.owner().equals("USER") ? "user" : "model")
-                        .parts(Part.builder().text(c.message()).build())
-                        .build())
+                .map((c) -> {
+                    String textWithTime = c.message() + " [발송 시간: " + c.timestamp() + "]";
+
+                    return Content.builder()
+                            .role(newChat.owner().equals("USER") ? "user" : "model")
+                            .parts(Part.builder().text(textWithTime).build())
+                            .build();
+                })
                 .toList();
         try (Client client = GenAIConfig.getClient()) {
             GenerateContentResponse response = client.models.generateContent(
