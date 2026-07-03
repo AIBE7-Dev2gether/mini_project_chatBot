@@ -28,7 +28,6 @@ public class ChatController extends BaseController {
     }
 
     // get
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // 접속 -> /chat
