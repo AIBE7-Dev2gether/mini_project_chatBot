@@ -1,12 +1,11 @@
 package com.example.archat.application.service;
 
-import com.example.archat.application.port.ChatProvider;
 import com.example.archat.domain.model.Chat;
 import com.example.archat.domain.repository.ChatRepository;
 import com.example.archat.domain.service.ChatService;
 import com.example.archat.infrastructure.api.GenAIChatProvider;
 import com.example.archat.infrastructure.api.GroqChatProvider;
-import com.example.archat.infrastructure.repository.InMemoryChatRepository;
+import com.example.archat.infrastructure.repository.SupabaseChatRepository;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -49,7 +48,7 @@ public class AIChatService implements ChatService {
 
     // 싱글톤 등록
     private AIChatService() {
-        this.chatRepository = InMemoryChatRepository.getInstance();
+        this.chatRepository = SupabaseChatRepository.getInstance();
 //        this.chatProvider = GenAIChatProvider.getInstance();
         this.genAIChatProvider = GenAIChatProvider.getInstance();
         this.groqChatProvider = GroqChatProvider.getInstance();
