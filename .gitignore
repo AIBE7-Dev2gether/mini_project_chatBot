@@ -43,3 +43,6 @@ build/
 
 ### img ###
 /img
+
+### idea ###
+.idea
