@@ -49,6 +49,8 @@ archat/
 
 **필수 환경 변수:**
 - `GEMINI_API_KEY` : Google Gemini API 키
+- `GROQ_API_KEY` : GROQ API 키
+- `NIM_API_KEY` : NIM API 키
 - `SUPABASE_DB_URL` : Supabase 데이터베이스 JDBC 연결 풀러 주소 (예: `jdbc:postgresql://aws-0-[region].pooler.supabase.com:6543/postgres`)
 - `SUPABASE_DB_USER` : Supabase 데이터베이스 접속 유저 (예: `postgres.[project-ref]`)
 - `SUPABASE_DB_PASSWORD` : Supabase 데이터베이스 비밀번호
