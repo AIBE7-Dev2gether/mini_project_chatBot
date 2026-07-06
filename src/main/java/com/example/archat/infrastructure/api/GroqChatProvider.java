@@ -20,6 +20,7 @@ public class GroqChatProvider implements ChatProvider {
 
     // 단일 챗
     @Override
+
     public String useAI(Chat chat) {
         return useAI(chat, List.of());
     }

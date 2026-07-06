@@ -41,6 +41,9 @@ build/
 ### env ###
 .env
 
+### local tomcat ###
+apache-tomcat-*/
+
 ## img ###
 img
 

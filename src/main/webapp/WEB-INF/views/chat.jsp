@@ -216,13 +216,28 @@
                     e.preventDefault();
                     selectHidden.value = e.target.getAttribute('data-value');
                     selectText.textContent = e.target.textContent;
-                    
+                    localStorage.setItem('selectedModel', selectHidden.value);
+
                     selectOptions.forEach(function(o) { o.classList.remove('font-bold'); });
                     e.target.classList.add('font-bold');
                     
                     closeDropdown();
                 });
             });
+
+            // 저장된 모델 복원 (페이지 리로드 후 선택 유지)
+            (function restoreModel() {
+                var saved = localStorage.getItem('selectedModel');
+                if (!saved) return;
+                selectOptions.forEach(function(o) {
+                    if (o.getAttribute('data-value') === saved) {
+                        selectHidden.value = saved;
+                        selectText.textContent = o.textContent;
+                        selectOptions.forEach(function(x) { x.classList.remove('font-bold'); });
+                        o.classList.add('font-bold');
+                    }
+                });
+            })();
 
             document.addEventListener('click', function(e) {
                 if (!selectBtn.contains(e.target) && !selectDropdown.contains(e.target)) {
