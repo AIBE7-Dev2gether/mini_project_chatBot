@@ -1,43 +1,41 @@
 # Database Schema (Supabase)
 
-이 문서는 프로젝트 내에서 사용하고 있는 Supabase 데이터베이스의 테이블 구조를 설명합니다.
+ArChat은 Supabase PostgreSQL에 사용자 프로필성 계정 정보와 채팅 이력을 저장합니다. 비밀번호는 이 프로젝트 DB에 저장하지 않고 Supabase Auth가 관리합니다.
 
-## ERD (Entity Relationship Diagram)
-마크다운을 지원하는 뷰어(예: GitHub, IntelliJ 등)에서 아래의 Mermaid 다이어그램을 통해 ERD를 시각적으로 확인할 수 있습니다.
+## ERD
 
 ```mermaid
 erDiagram
     account {
-        varchar user_id PK "Supabase Auth 사용자 ID"
-        varchar email "앱에서 사용하는 이메일"
-        timestamp created_at "앱 계정 생성 시각"
-        timestamp updated_at "앱 계정 갱신 시각"
+        varchar user_id PK "Supabase Auth user id"
+        varchar email UK "사용자 이메일"
+        timestamptz created_at "생성 시각"
+        timestamptz updated_at "수정 시각"
     }
+
     chats {
-        int id PK "데이터 고유 식별자"
-        text message "채팅 메시지 내용"
-        varchar owner "메시지 작성자 (User/AI)"
-        varchar user_id "사용자/채팅방 식별 ID"
-        varchar model "사용된 AI 모델명"
-        varchar timestamp "메시지 작성(발송) 시간"
-        timestamp created_at "데이터베이스 생성 시각"
+        serial id PK "채팅 row id"
+        text message "메시지 내용"
+        varchar owner "USER 또는 AI"
+        varchar user_id FK "account.user_id"
+        varchar model "요청 모델명"
+        varchar timestamp "애플리케이션에서 기록한 발송 시각"
+        timestamptz created_at "DB row 생성 시각"
     }
+
     account ||--o{ chats : owns
 ```
 
 ## `account` 테이블
-Supabase Auth의 사용자 ID와 앱 내부 프로필 정보를 연결하는 테이블입니다. 비밀번호는 저장하지 않습니다.
 
-### 테이블 스키마
+Supabase Auth의 사용자 ID와 애플리케이션에서 표시할 이메일을 연결합니다. `SupabaseAccountRepository.upsert()`가 로그인/회원가입 성공 시 이 테이블을 갱신합니다.
 
-| 컬럼명 (Column) | 데이터 타입 (Type) | 제약 조건 (Constraints) | 설명 |
-| :--- | :--- | :--- | :--- |
-| **`user_id`** | `VARCHAR(255)` | `PRIMARY KEY` | Supabase Auth의 사용자 고유 ID |
-| **`email`** | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` | 사용자 이메일 |
-| **`created_at`**| `TIMESTAMP WITH TIME ZONE` | `DEFAULT NOW()` | 앱 계정 생성 시각 |
-| **`updated_at`**| `TIMESTAMP WITH TIME ZONE` | `DEFAULT NOW()` | 앱 계정 갱신 시각 |
-
-### 생성용 SQL 문
+| 컬럼 | 타입 | 제약 조건 | 설명 |
+|---|---|---|---|
+| `user_id` | `VARCHAR(255)` | `PRIMARY KEY` | Supabase Auth 사용자 ID |
+| `email` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` | 사용자 이메일 |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | 최초 생성 시각 |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | 마지막 갱신 시각 |
 
 ```sql
 CREATE TABLE account (
@@ -49,23 +47,18 @@ CREATE TABLE account (
 ```
 
 ## `chats` 테이블
-채팅 내역(사용자 질문 및 AI 응답)을 저장하는 테이블입니다.
 
-### 테이블 스키마
+사용자 메시지와 AI 응답을 모두 저장합니다. 현재 코드의 `SupabaseChatRepository`는 `id ASC` 기준으로 사용자별 채팅 이력을 조회합니다.
 
-| 컬럼명 (Column) | 데이터 타입 (Type) | 제약 조건 (Constraints) | 설명 |
-| :--- | :--- | :--- | :--- |
-| **`id`** | `SERIAL` | `PRIMARY KEY` | 데이터 고유 식별자 (자동 증가 번호) |
-| **`message`** | `TEXT` | | 채팅 메시지 내용 |
-| **`owner`** | `VARCHAR(255)` | | 메시지 작성자 구분 (`User` 또는 `AI`) |
-| **`user_id`** | `VARCHAR(255)` | | 사용자/채팅방을 식별하는 고유 ID |
-| **`model`** | `VARCHAR(255)` | | 사용된 AI 모델명 (예: `gemini`, `gemma`) |
-| **`timestamp`** | `VARCHAR(100)` | | 메시지 작성(발송) 시간 (문자열 타입) |
-| **`created_at`**| `TIMESTAMP WITH TIME ZONE` | `DEFAULT NOW()` | 데이터베이스에 레코드가 생성된 실제 시각 |
-
-### 생성용 SQL 문
-
-Supabase 대시보드의 **SQL Editor**에서 아래 쿼리를 실행하여 테이블을 생성할 수 있습니다.
+| 컬럼 | 타입 | 제약 조건 | 설명 |
+|---|---|---|---|
+| `id` | `SERIAL` | `PRIMARY KEY` | 채팅 row 자동 증가 ID |
+| `message` | `TEXT` |  | 메시지 본문 |
+| `owner` | `VARCHAR(255)` |  | `USER` 또는 `AI` |
+| `user_id` | `VARCHAR(255)` |  | 세션 사용자 ID. 논리적으로 `account.user_id`와 연결 |
+| `model` | `VARCHAR(255)` |  | 선택한 AI 모델명 |
+| `timestamp` | `VARCHAR(100)` |  | `ZonedDateTime.now().toString()` 값 |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | DB 저장 시각 |
 
 ```sql
 CREATE TABLE chats (
@@ -78,3 +71,9 @@ CREATE TABLE chats (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
+
+## 구현 기준 메모
+
+- `account` 테이블 생성 SQL은 [account_table.sql](account_table.sql)에 별도로 보관되어 있습니다.
+- 현재 `chats.user_id`에는 코드상 외래키 제약이 명시되어 있지 않습니다. 운영 DB에서 무결성을 강화하려면 `account(user_id)`를 참조하는 FK를 추가할 수 있습니다.
+- `timestamp`는 문자열로 저장됩니다. 정렬은 `id ASC`로 수행하므로 현재 채팅 순서는 삽입 순서에 의존합니다.

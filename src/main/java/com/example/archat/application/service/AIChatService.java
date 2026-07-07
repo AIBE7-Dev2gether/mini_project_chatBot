@@ -29,9 +29,9 @@ public class AIChatService implements ChatService {
         String aiResponse = null;
         if (chat.model().contains("gemini") || chat.model().contains("gemma")) {
             aiResponse = genAIChatProvider.useAI(chat, history);
-        } else if (chat.model().contains("nvidia") || chat.model().contains("nemotron")) {
+        } else if (chat.model().contains("nvidia") || chat.model().contains("nemotron") || chat.model().contains("meta/")) {
             aiResponse = nimChatProvider.useAI(chat, history);
-        }else {
+        } else {
             aiResponse = groqChatProvider.useAI(chat, history);
         }
 

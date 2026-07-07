@@ -1,64 +1,118 @@
-# ArChat (아카이브 챗)
+# ArChat
 
-Java Servlet과 JSP를 기반으로 작성된 챗봇 웹 애플리케이션입니다. 구글의 Gemini AI API를 활용하여 사용자의 메시지에 자동으로 답변하며, Supabase(PostgreSQL)를 연동하여 채팅 내역을 안전하게 영구 저장합니다.
+Java Servlet/JSP 기반의 AI 채팅 웹 애플리케이션입니다. 사용자는 Supabase Auth로 로그인/회원가입하고, 채팅 메시지는 Supabase PostgreSQL에 저장됩니다. AI 응답은 선택한 모델명에 따라 Gemini, Groq, NVIDIA NIM Provider 중 하나를 통해 생성됩니다.
 
-## 📁 관련 문서 (Docs)
-프로젝트의 세부 설계 및 데이터베이스 구조는 `docs/` 디렉토리 내의 마크다운 문서를 참고하세요.
-* [데이터 흐름도 (Data Flow)](docs/dataFlow/data_flow.md)
-* [데이터베이스 스키마 및 ERD (Database Schema)](docs/database/database_schema.md)
+## 관련 문서
 
-## 🏗️ 프로젝트 구조 (Layered/Hexagonal Architecture)
+- [데이터 흐름 및 아키텍처](docs/dataFlow/data_flow.md)
+- [데이터베이스 스키마](docs/database/database_schema.md)
+- [계정 테이블 SQL](docs/database/account_table.sql)
+- [Java 백엔드 학습 로드맵](docs/study/java_backend_roadmap.md)
 
-본 프로젝트는 유지보수성과 확장성을 높이기 위해 도메인, 애플리케이션, 인프라스트럭처, 프레젠테이션 계층으로 역할을 명확히 분리하여 설계되었습니다.
+## 프로젝트 구조
 
 ```text
-archat/
-├── docs/                                    # 프로젝트 관련 문서 디렉토리
-│   ├── data_flow.md                         # 데이터 흐름도
-│   └── database_schema.md                   # DB 구조 및 ERD
+.
+├── docs/
+│   ├── dataFlow/
+│   │   └── data_flow.md
+│   ├── database/
+│   │   ├── account_table.sql
+│   │   └── database_schema.md
+│   └── study/
+│       └── java_backend_roadmap.md
 ├── src/main/java/com/example/archat/
-│   ├── application/                         # 비즈니스 로직 및 유즈케이스 계층
+│   ├── application/
+│   │   ├── port/
+│   │   │   ├── ChatProvider.java
+│   │   │   └── ChatPublisher.java
 │   │   └── service/
-│   │       └── AIChatService.java           # 채팅 저장 및 AI API 호출 통합 서비스 로직
-│   ├── domain/                              # 핵심 도메인 모델 계층
+│   │       ├── AIChatService.java
+│   │       ├── AuthException.java
+│   │       ├── AuthService.java
+│   │       ├── GeminiChatService.java
+│   │       └── SupabaseAuthService.java
+│   ├── domain/
 │   │   ├── model/
-│   │   │   └── Chat.java                    # 채팅 메시지 모델 (Record)
-│   │   └── repository/
-│   │       └── ChatRepository.java          # 데이터 저장소 인터페이스
-│   ├── infrastructure/                      # 외부 API 통신 및 DB 연결 계층
+│   │   │   ├── AuthUser.java
+│   │   │   └── Chat.java
+│   │   ├── repository/
+│   │   │   ├── AccountRepository.java
+│   │   │   └── ChatRepository.java
+│   │   └── service/
+│   │       └── ChatService.java
+│   ├── infrastructure/
 │   │   ├── api/
-│   │   │   ├── GenAIChatProvider.java       # Gemini API 호출 구현체
-│   │   │   └── GroqChatProvider.java        # Groq 등 기타 AI 호출 구현체
+│   │   │   ├── GenAIChatProvider.java
+│   │   │   ├── GenAIConfig.java
+│   │   │   ├── GroqChatProvider.java
+│   │   │   ├── GroqConfig.java
+│   │   │   ├── NimChatProvider.java
+│   │   │   ├── NimConfig.java
+│   │   │   └── SupabaseAuthClient.java
 │   │   ├── db/
-│   │   │   └── DatabaseUtil.java            # Supabase(PostgreSQL) JDBC 연결 관리
-│   │   └── repository/
-│   │       └── SupabaseChatRepository.java  # JDBC를 이용한 Supabase 기반 채팅 저장소 구현체
-│   └── presentation/                        # 사용자 요청 처리 계층 (Controller)
-│       └── controller/
-│           └── ChatController.java          # HTTP 요청 처리 및 뷰(JSP) 포워딩
+│   │   │   └── DatabaseUtil.java
+│   │   ├── repository/
+│   │   │   ├── SupabaseAccountRepository.java
+│   │   │   └── SupabaseChatRepository.java
+│   │   └── session/
+│   │       ├── SessionCookieConfigListener.java
+│   │       └── SessionManager.java
+│   └── presentation/
+│       ├── controller/
+│       │   ├── AuthController.java
+│       │   ├── BaseController.java
+│       │   └── ChatController.java
+│       ├── dto/
+│       │   └── ChatResponseDTO.java
+│       └── filter/
+│           ├── AuthFilter.java
+│           └── EncodingFilter.java
 ├── src/main/webapp/
-│   ├── WEB-INF/
-│   │   └── views/
-│   │       └── chat.jsp                     # 채팅 화면을 렌더링하는 JSP 페이지
-└── pom.xml                                  # Maven 의존성 관리 (google-genai, postgresql 등)
+│   └── WEB-INF/
+│       ├── views/
+│       │   ├── chat.jsp
+│       │   ├── login.jsp
+│       │   └── signup.jsp
+│       └── web.xml
+├── Dockerfile
+├── mvnw / mvnw.cmd
+└── pom.xml
 ```
 
-## 🚀 환경 변수 설정 및 실행 방법
+## 아키텍처 요약
 
-이 프로젝트는 외부 API(Gemini)와 외부 데이터베이스(Supabase)를 사용합니다. Tomcat 서버를 실행하기 전 시스템 환경 변수(또는 톰캣 플러그인을 통한 `.env` 연동)에 다음 값들이 반드시 설정되어야 합니다.
+- `presentation`: Servlet Controller, Filter, JSP View와 DTO를 포함합니다.
+- `application`: 인증/채팅 유스케이스를 구현하고 외부 Provider 사용 방식을 조합합니다.
+- `domain`: 핵심 모델, Repository 인터페이스, 서비스 인터페이스를 둡니다.
+- `infrastructure`: Supabase DB/Auth, AI API Provider, 세션, JDBC 연결처럼 외부 기술과 맞닿은 구현을 둡니다.
 
-**필수 환경 변수:**
-- `GEMINI_API_KEY` : Google Gemini API 키
-- `GROQ_API_KEY` : GROQ API 키
-- `NIM_API_KEY` : NIM API 키
-- `SUPABASE_DB_URL` : Supabase 데이터베이스 JDBC 연결 풀러 주소 (예: `jdbc:postgresql://aws-0-[region].pooler.supabase.com:6543/postgres`)
-- `SUPABASE_DB_USER` : Supabase 데이터베이스 접속 유저 (예: `postgres.[project-ref]`)
-- `SUPABASE_DB_PASSWORD` : Supabase 데이터베이스 비밀번호
+## 주요 흐름
 
-> ⚠️ 보안 권고사항: GitHub 저장소에 비밀번호나 API 키가 포함된 `.env` 파일이 올라가지 않도록 주의하세요. 설정 가이드를 제공하기 위해 비밀값이 비워진 `.env.sample` 파일을 활용하시기 바랍니다.
+- 인증: `AuthController`가 로그인/회원가입 요청을 받고 `SupabaseAuthService`가 `SupabaseAuthClient`로 Supabase Auth API를 호출합니다. 성공 시 `SupabaseAccountRepository`가 `account` 테이블을 upsert하고 `SessionManager`가 세션에 사용자 정보를 저장합니다.
+- 채팅 조회: `ChatController#doGet`이 세션 사용자 ID로 `AIChatService.findAllByUserId()`를 호출하고, `SupabaseChatRepository`에서 `chats` 테이블을 조회한 뒤 `chat.jsp`로 전달합니다.
+- 메시지 전송: `ChatController#doPost`가 사용자 메시지를 `Chat`으로 만들고 `AIChatService.save()`를 호출합니다. 서비스는 사용자 메시지를 저장하고 채팅 이력을 조회한 뒤 모델명에 따라 `GenAIChatProvider`, `GroqChatProvider`, `NimChatProvider` 중 하나를 호출해 AI 응답도 저장합니다.
 
-## 🔧 최근 업데이트 내역
-- AI 에이전트 작업 표준화 및 아키텍처 규칙 강제를 위한 가이드라인(`AGENT.md`) 추가
-- 메모리 기반 저장소(`InMemoryChatRepository`)에서 **Supabase 기반 영구 저장소(`SupabaseChatRepository`)**로 마이그레이션 완료
-- `docs/` 폴더 분리를 통한 문서화(ERD 다이어그램 포함) 구조 개선
-- 계층형 아키텍처 패턴 적용에 따른 패키지 구조 전면 개편
+## 환경 변수
+
+- `GEMINI_API_KEY`: Google Gemini API Key
+- `GROQ_API_KEY`: Groq API Key
+- `NIM_API_KEY`: NVIDIA NIM API Key
+- `SUPABASE_DB_URL`: Supabase PostgreSQL JDBC URL
+- `SUPABASE_DB_USER`: Supabase PostgreSQL 사용자
+- `SUPABASE_DB_PASSWORD`: Supabase PostgreSQL 비밀번호
+- `SUPABASE_URL`: Supabase 프로젝트 URL
+- `SUPABASE_ANON_KEY`: Supabase Auth 로그인용 anon key
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase Auth 관리자 API 회원가입용 service role key
+
+## 빌드
+
+```bash
+./mvnw clean package
+```
+
+Windows PowerShell에서는 다음 명령을 사용할 수 있습니다.
+
+```powershell
+.\mvnw.cmd clean package
+```
