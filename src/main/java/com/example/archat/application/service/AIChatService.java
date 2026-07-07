@@ -5,6 +5,7 @@ import com.example.archat.domain.repository.ChatRepository;
 import com.example.archat.domain.service.ChatService;
 import com.example.archat.infrastructure.api.GenAIChatProvider;
 import com.example.archat.infrastructure.api.GroqChatProvider;
+import com.example.archat.infrastructure.api.NimChatProvider;
 import com.example.archat.infrastructure.repository.SupabaseChatRepository;
 
 import java.time.ZonedDateTime;
@@ -16,6 +17,7 @@ public class AIChatService implements ChatService {
 //    private final ChatProvider chatProvider;
     private final GroqChatProvider groqChatProvider;
     private final GenAIChatProvider genAIChatProvider;
+    private final NimChatProvider nimChatProvider;
 
 
     @Override
@@ -27,7 +29,9 @@ public class AIChatService implements ChatService {
         String aiResponse = null;
         if (chat.model().contains("gemini") || chat.model().contains("gemma")) {
             aiResponse = genAIChatProvider.useAI(chat, history);
-        } else {
+        } else if (chat.model().contains("nvidia") || chat.model().contains("nemotron")) {
+            aiResponse = nimChatProvider.useAI(chat, history);
+        }else {
             aiResponse = groqChatProvider.useAI(chat, history);
         }
 
@@ -52,6 +56,8 @@ public class AIChatService implements ChatService {
 //        this.chatProvider = GenAIChatProvider.getInstance();
         this.genAIChatProvider = GenAIChatProvider.getInstance();
         this.groqChatProvider = GroqChatProvider.getInstance();
+
+        this.nimChatProvider = NimChatProvider.getInstance();
     }
 
     private static final AIChatService instance = new AIChatService();
