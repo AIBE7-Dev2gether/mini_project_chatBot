@@ -150,6 +150,9 @@
                             <li>
                                 <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="openai/gpt-oss-120b">GPT OSS 120B (Groq)</button>
                             </li>
+                            <li>
+                                <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="meta/llama-3.1-8b-instruct">Llama 3.1 8B (NIM)</button>
+                            </li>
                         </ul>
                     </div>
                 </div>
