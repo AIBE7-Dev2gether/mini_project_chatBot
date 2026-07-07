@@ -7,6 +7,12 @@
 
 ```mermaid
 erDiagram
+    account {
+        varchar user_id PK "Supabase Auth 사용자 ID"
+        varchar email "앱에서 사용하는 이메일"
+        timestamp created_at "앱 계정 생성 시각"
+        timestamp updated_at "앱 계정 갱신 시각"
+    }
     chats {
         int id PK "데이터 고유 식별자"
         text message "채팅 메시지 내용"
@@ -16,6 +22,30 @@ erDiagram
         varchar timestamp "메시지 작성(발송) 시간"
         timestamp created_at "데이터베이스 생성 시각"
     }
+    account ||--o{ chats : owns
+```
+
+## `account` 테이블
+Supabase Auth의 사용자 ID와 앱 내부 프로필 정보를 연결하는 테이블입니다. 비밀번호는 저장하지 않습니다.
+
+### 테이블 스키마
+
+| 컬럼명 (Column) | 데이터 타입 (Type) | 제약 조건 (Constraints) | 설명 |
+| :--- | :--- | :--- | :--- |
+| **`user_id`** | `VARCHAR(255)` | `PRIMARY KEY` | Supabase Auth의 사용자 고유 ID |
+| **`email`** | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` | 사용자 이메일 |
+| **`created_at`**| `TIMESTAMP WITH TIME ZONE` | `DEFAULT NOW()` | 앱 계정 생성 시각 |
+| **`updated_at`**| `TIMESTAMP WITH TIME ZONE` | `DEFAULT NOW()` | 앱 계정 갱신 시각 |
+
+### 생성용 SQL 문
+
+```sql
+CREATE TABLE account (
+    user_id VARCHAR(255) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
 ## `chats` 테이블

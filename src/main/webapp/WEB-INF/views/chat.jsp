@@ -59,6 +59,12 @@
 
     <!-- 헤더: 여백을 많이 주고 세리프 폰트로 제목만 툭 던져둠 -->
     <header class="pt-16 pb-12 text-center border-b border-ink/5 mx-auto w-full max-w-2xl px-6">
+        <div class="mb-5 flex items-center justify-between gap-4 text-sm text-meta/70">
+            <span class="truncate">${currentUserEmail}</span>
+            <form action="<c:url value="/logout"/>" method="post">
+                <button type="submit" class="font-sans text-xs uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">Logout</button>
+            </form>
+        </div>
         <h1 class="font-serif text-3xl font-black tracking-tight text-ink mb-3">대화의 기록</h1>
     </header>
 
