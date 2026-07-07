@@ -31,7 +31,7 @@ public class AIChatService implements ChatService {
             aiResponse = genAIChatProvider.useAI(chat, history);
         }  else if (chat.model().contains("nvidia") || chat.model().contains("nemotron") || chat.model().startsWith("meta/")) {
             aiResponse = nimChatProvider.useAI(chat, history);
-        }else {
+        } else {
             aiResponse = groqChatProvider.useAI(chat, history);
         }
 
