@@ -18,7 +18,7 @@ public class GenAIChatProvider implements ChatProvider {
             GenerateContentResponse response = client.models.generateContent(
                     chat.model(),
                     chat.message(),
-                    GenAIConfig.getGenerateContentConfig());
+                    GenAIConfig.getGenerateContentConfig(chat.model()));
             return response.text();
         } catch (Exception e) {
             e.printStackTrace();
@@ -29,21 +29,42 @@ public class GenAIChatProvider implements ChatProvider {
     // 히스토리 포함
     @Override
     public String useAI(Chat newChat, List<Chat> chatHistory) {
-        List<Content> contents = chatHistory.stream()
-                .map((c) -> {
-                    String textWithTime = c.message() + " [발송 시간: " + c.timestamp() + "]";
+        List<Content> contents = new java.util.ArrayList<>();
+        String currentRole = null;
+        StringBuilder currentText = new StringBuilder();
 
-                    return Content.builder()
-                            .role(newChat.owner().equals("USER") ? "user" : "model")
-                            .parts(Part.builder().text(textWithTime).build())
-                            .build();
-                })
-                .toList();
+        for (Chat c : chatHistory) {
+            if (c.message() == null || c.message().trim().isEmpty()) {
+                continue; // 이전에 저장된 빈 답변(오류)을 무시하여 '빈 답변 루프' 방지
+            }
+            String role = c.owner().equalsIgnoreCase("user") ? "user" : "model";
+            String textWithTime = c.message() + " [발송 시간: " + c.timestamp() + "]\n";
+
+            if (currentRole == null) {
+                currentRole = role;
+                currentText.append(textWithTime);
+            } else if (currentRole.equals(role)) {
+                currentText.append(textWithTime); // 같은 역할이 연속되면 하나의 메시지로 병합 (API 오류 방지)
+            } else {
+                contents.add(Content.builder()
+                        .role(currentRole)
+                        .parts(Part.builder().text(currentText.toString().trim()).build())
+                        .build());
+                currentRole = role;
+                currentText = new StringBuilder(textWithTime);
+            }
+        }
+        if (currentRole != null) {
+            contents.add(Content.builder()
+                    .role(currentRole)
+                    .parts(Part.builder().text(currentText.toString().trim()).build())
+                    .build());
+        }
         try (Client client = GenAIConfig.getClient()) {
             GenerateContentResponse response = client.models.generateContent(
                     newChat.model(),
                     contents,
-                    GenAIConfig.getGenerateContentConfig());
+                    GenAIConfig.getGenerateContentConfig(newChat.model()));
             return response.text();
         } catch (Exception e) {
             e.printStackTrace();
