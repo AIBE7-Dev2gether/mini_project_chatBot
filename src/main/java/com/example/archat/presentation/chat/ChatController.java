@@ -33,12 +33,27 @@ public class ChatController extends BaseController {
             return;
         }
 
-        List<ChatResponseDTO> response = chatUseCase.findAllByUserId(authUser.userId())
+        var rooms = chatUseCase.findAllRooms(authUser.userId())
                 .stream()
-                .map(ChatResponseDTO::of)
+                .map(ChatRoomResponseDTO::of)
                 .toList();
+        req.setAttribute("rooms", rooms);
 
-        req.setAttribute("chats", response);
+        String roomId = req.getParameter("roomId");
+        if (roomId == null && !rooms.isEmpty()) {
+            roomId = rooms.get(0).getId();
+        }
+
+        req.setAttribute("currentRoomId", roomId);
+
+        if (roomId != null) {
+            List<ChatResponseDTO> response = chatUseCase.findAllByRoomId(roomId)
+                    .stream()
+                    .map(ChatResponseDTO::of)
+                    .toList();
+            req.setAttribute("chats", response);
+        }
+
         req.setAttribute("currentUserEmail", authUser.email());
 
         req.getRequestDispatcher("%s/%s".formatted(VIEW_PREFIX, "chat.jsp"))
@@ -53,14 +68,39 @@ public class ChatController extends BaseController {
             return;
         }
 
+        String action = req.getParameter("action");
+        if ("createRoom".equals(action)) {
+            String title = req.getParameter("title");
+            if (title == null || title.trim().isEmpty()) {
+                title = "새 대화방";
+            }
+            var room = chatUseCase.createRoom(authUser.userId(), title);
+            resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", room.id()));
+            return;
+        } else if ("deleteRoom".equals(action)) {
+            String roomId = req.getParameter("roomId");
+            if (roomId != null && !roomId.isEmpty()) {
+                chatUseCase.deleteRoom(roomId);
+            }
+            resp.sendRedirect("%s/%s".formatted(req.getContextPath(), "chat"));
+            return;
+        }
+
+        String roomId = req.getParameter("roomId");
+        if (roomId == null || roomId.trim().isEmpty()) {
+            var room = chatUseCase.createRoom(authUser.userId(), "새 대화방");
+            roomId = room.id();
+        }
+
         Chat chat = new Chat(
                 req.getParameter("message"),
                 "USER",
                 authUser.userId(),
+                roomId,
                 req.getParameter("model"),
                 ZonedDateTime.now().toString()
         );
         chatUseCase.save(chat);
-        resp.sendRedirect("%s/%s".formatted(req.getContextPath(), "chat"));
+        resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", roomId));
     }
 }
