@@ -13,27 +13,31 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-public class GroqChatProvider implements ChatProvider {
+public class OpenAICompatibleProvider implements ChatProvider {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
 
-    // 단일 챗
-    @Override
+    private final String endpoint;
+    private final String apiKey;
+    private final String systemInstruction;
+    private final int maxTokens;
 
-    public String useAI(Chat chat) {
-        return useAI(chat, List.of());
+    public OpenAICompatibleProvider(String endpoint, String apiKey, String systemInstruction, int maxTokens) {
+        this.endpoint = endpoint;
+        this.apiKey = apiKey;
+        this.systemInstruction = systemInstruction;
+        this.maxTokens = maxTokens;
     }
 
-    // 히스토리 포함
     @Override
     public String useAI(Chat newChat, List<Chat> chatHistory) {
         try {
             String body = buildBody(newChat, chatHistory);
 
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(GroqConfig.ENDPOINT))
-                    .header("Authorization", "Bearer " + GroqConfig.GROQ_API_KEY)
+                    .uri(URI.create(endpoint))
+                    .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
@@ -41,7 +45,7 @@ public class GroqChatProvider implements ChatProvider {
             HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
 
             if (res.statusCode() != 200) {
-                return "문제가 생겼어요 : Groq %d - %s".formatted(res.statusCode(), res.body());
+                return "문제가 생겼어요 : API %d - %s".formatted(res.statusCode(), res.body());
             }
 
             JsonNode root = MAPPER.readTree(res.body());
@@ -53,20 +57,17 @@ public class GroqChatProvider implements ChatProvider {
         }
     }
 
-    // 요청 JSON 조립
     private String buildBody(Chat newChat, List<Chat> history) throws Exception {
         ObjectNode payload = MAPPER.createObjectNode();
         payload.put("model", newChat.model());
-        payload.put("max_tokens", GroqConfig.MAX_TOKENS);
+        payload.put("max_tokens", maxTokens);
 
         ArrayNode messages = payload.putArray("messages");
 
-        // system 프롬프트
         messages.addObject()
                 .put("role", "system")
-                .put("content", GroqConfig.SYSTEM_INSTRUCTION);
+                .put("content", systemInstruction);
 
-        // 히스토리 (newChat은 이미 history에 저장되어 포함됨)
         for (Chat c : history) {
             messages.addObject()
                     .put("role", "USER".equals(c.owner()) ? "user" : "assistant")
@@ -75,15 +76,4 @@ public class GroqChatProvider implements ChatProvider {
 
         return MAPPER.writeValueAsString(payload);
     }
-
-    private GroqChatProvider() {
-
-    }
-
-    private static final GroqChatProvider instance = new GroqChatProvider();
-
-    public static GroqChatProvider getInstance() {
-        return instance;
-    }
-
 }

@@ -3,9 +3,11 @@ package com.example.archat.application.service;
 import com.example.archat.domain.model.Chat;
 import com.example.archat.domain.repository.ChatRepository;
 import com.example.archat.domain.service.ChatService;
+import com.example.archat.application.port.ChatProvider;
 import com.example.archat.infrastructure.api.GenAIChatProvider;
-import com.example.archat.infrastructure.api.GroqChatProvider;
-import com.example.archat.infrastructure.api.NimChatProvider;
+import com.example.archat.infrastructure.api.GroqConfig;
+import com.example.archat.infrastructure.api.NimConfig;
+import com.example.archat.infrastructure.api.OpenAICompatibleProvider;
 import com.example.archat.infrastructure.repository.SupabaseChatRepository;
 
 import java.time.ZonedDateTime;
@@ -14,16 +16,14 @@ import java.util.List;
 public class AIChatService implements ChatService {
 
     private final ChatRepository chatRepository;
-//    private final ChatProvider chatProvider;
-    private final GroqChatProvider groqChatProvider;
-    private final GenAIChatProvider genAIChatProvider;
-    private final NimChatProvider nimChatProvider;
+    private final ChatProvider groqChatProvider;
+    private final ChatProvider genAIChatProvider;
+    private final ChatProvider nimChatProvider;
 
 
     @Override
     public void save(Chat chat) {
         chatRepository.save(chat);
-//        String aiResponse = useAI(chat);
         List<Chat> history = chatRepository.findAllByUserId(chat.userId());
 
         String aiResponse = null;
@@ -53,11 +53,13 @@ public class AIChatService implements ChatService {
     // 싱글톤 등록
     private AIChatService() {
         this.chatRepository = SupabaseChatRepository.getInstance();
-//        this.chatProvider = GenAIChatProvider.getInstance();
         this.genAIChatProvider = GenAIChatProvider.getInstance();
-        this.groqChatProvider = GroqChatProvider.getInstance();
-
-        this.nimChatProvider = NimChatProvider.getInstance();
+        this.groqChatProvider = new OpenAICompatibleProvider(
+                GroqConfig.ENDPOINT, GroqConfig.GROQ_API_KEY, GroqConfig.SYSTEM_INSTRUCTION, GroqConfig.MAX_TOKENS
+        );
+        this.nimChatProvider = new OpenAICompatibleProvider(
+                NimConfig.ENDPOINT, NimConfig.NIM_API_KEY, NimConfig.SYSTEM_INSTRUCTION, NimConfig.MAX_TOKENS
+        );
     }
 
     private static final AIChatService instance = new AIChatService();
