@@ -20,5 +20,5 @@ public interface ChatUseCase {
     // 전체 데이터를 불러오기
     List<Chat> findAllByRoomId(String roomId);
 
-    void save(Chat chat);
+    Chat save(Chat chat);
 }

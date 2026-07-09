@@ -26,7 +26,7 @@ public class AIChatUseCase implements ChatUseCase {
 
 
     @Override
-    public void save(Chat chat) {
+    public Chat save(Chat chat) {
         chatRepository.save(chat);
         List<Chat> history = chatRepository.findAllByRoomId(chat.roomId());
 
@@ -48,6 +48,7 @@ public class AIChatUseCase implements ChatUseCase {
                 ZonedDateTime.now().toString()
         );
         chatRepository.save(aiChat);
+        return aiChat;
     }
 
 

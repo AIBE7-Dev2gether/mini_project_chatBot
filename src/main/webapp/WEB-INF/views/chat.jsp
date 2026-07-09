@@ -102,7 +102,7 @@
         <div class="mt-auto px-6 pt-6 border-t border-ink/5">
             <div class="text-xs text-meta/70 truncate mb-3">${currentUserEmail}</div>
             <form action="<c:url value='/logout'/>" method="post">
-                <button type="submit" class="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">Logout</button>
+                <button type="submit" class="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">로그아웃</button>
             </form>
         </div>
     </aside>
@@ -388,21 +388,41 @@
 
             if(chatForm) {
                 chatForm.addEventListener('submit', function(e) {
-                    if(messageInput.value.trim() === '') {
+                    var message = messageInput.value.trim();
+                    if(message === '') {
                         e.preventDefault();
                         return;
                     }
+                    e.preventDefault();
 
-                    // 전송 버튼 상태 변경
+                    // 1. 사용자 질문을 즉각적으로 화면에 렌더링 (Optimistic Update)
+                    var emptyState = chatHistory.querySelector('.m-auto.text-center');
+                    if (emptyState) emptyState.remove();
+
+                    var userRow = document.createElement('article');
+                    userRow.className = 'mb-14 animate-fade-in-up';
+                    userRow.innerHTML = 
+                        '<header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">' +
+                            '<span class="font-serif font-bold text-lg text-ink">Q.</span>' +
+                            '<time class="font-sans text-xs text-meta/70 tabular-nums">방금 전</time>' +
+                        '</header>' +
+                        '<div class="px-5 py-4 border border-ink/10 rounded-2xl rounded-tl-sm font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">' + escapeHtml(message) + '</div>';
+                    
+                    chatHistory.appendChild(userRow);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                    // 입력창 초기화 및 버튼 비활성화
+                    messageInput.value = '';
+                    messageInput.disabled = true;
                     sendBtn.disabled = true;
                     sendText.classList.add('hidden');
                     sendArrow.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
 
-                    // 에디토리얼 무드에 맞는 AI 로딩(작성 중) 요소 추가
+                    // 2. 에디토리얼 무드에 맞는 AI 로딩(작성 중) 요소 추가
                     var loadingRow = document.createElement('article');
-                    loadingRow.className = 'mb-14 animate-fade-in-up opacity-0';
-                    loadingRow.style.animationDelay = '0.1s';
+                    loadingRow.id = 'ai-loading';
+                    loadingRow.className = 'mb-14 animate-fade-in-up';
                     loadingRow.innerHTML = 
                         '<header class="mb-3 flex items-baseline gap-3">' +
                             '<span class="font-serif font-bold text-lg text-accent">A.</span>' +
@@ -418,7 +438,86 @@
                     
                     chatHistory.appendChild(loadingRow);
                     chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                    // 3. 서버로 전송 (Fetch API)
+                    var formData = new URLSearchParams();
+                    formData.append('message', message);
+                    formData.append('model', selectHidden.value);
+                    formData.append('roomId', document.querySelector('input[name="roomId"]').value);
+
+                    fetch(chatForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData.toString()
+                    })
+                    .then(function(response) {
+                        if (response.redirected) {
+                            window.location.href = response.url; // 새 방이 생성되어 리다이렉트 된 경우
+                            return null;
+                        }
+                        if (!response.ok) throw new Error('서버 통신 오류');
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (!data) return; // 리다이렉트 진행 중
+
+                        var loadingNode = document.getElementById('ai-loading');
+                        if (loadingNode) loadingNode.remove();
+
+                        // 날짜 포맷 (선택사항)
+                        var formattedTime = '방금 전';
+                        try {
+                            var d = new Date(data.timestamp.replace(/\[.*\]$/, ''));
+                            if(!isNaN(d.getTime())) {
+                                formattedTime = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                            }
+                        } catch(e) {}
+
+                        var aiRow = document.createElement('article');
+                        aiRow.className = 'mb-14 animate-fade-in-up';
+                        aiRow.innerHTML = 
+                            '<header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">' +
+                                '<span class="font-serif font-bold text-lg text-accent">A.</span>' +
+                                '<time class="font-sans text-xs text-meta/70 tabular-nums">' + formattedTime + '</time>' +
+                            '</header>' +
+                            '<div class="px-5 py-4 border border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5 font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">' + escapeHtml(data.message) + '</div>';
+                        
+                        chatHistory.appendChild(aiRow);
+                        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                        restoreInput();
+                    })
+                    .catch(function(error) {
+                        console.error('Error:', error);
+                        var loadingNode = document.getElementById('ai-loading');
+                        if (loadingNode) {
+                            loadingNode.querySelector('div').innerHTML = '<span class="text-accent not-italic">오류가 발생했습니다. 잠시 후 다시 시도해주세요.</span>';
+                        }
+                        restoreInput();
+                    });
                 });
+            }
+
+            function restoreInput() {
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                sendText.classList.remove('hidden');
+                sendArrow.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                messageInput.focus();
+            }
+
+            function escapeHtml(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
             }
         });
     </script>
