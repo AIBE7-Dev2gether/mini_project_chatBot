@@ -55,116 +55,146 @@
         *:focus { outline: none; }
     </style>
 </head>
-<body class="bg-paper text-ink font-sans antialiased min-h-screen flex flex-col selection:bg-accent selection:text-white">
+<body class="bg-paper text-ink font-sans antialiased min-h-screen flex selection:bg-accent selection:text-white">
 
-    <!-- 헤더: 여백을 많이 주고 세리프 폰트로 제목만 툭 던져둠 -->
-    <header class="pt-16 pb-12 text-center border-b border-ink/5 mx-auto w-full max-w-2xl px-6">
-        <div class="mb-5 flex items-center justify-between gap-4 text-sm text-meta/70">
-            <span class="truncate">${currentUserEmail}</span>
-            <form action="<c:url value="/logout"/>" method="post">
-                <button type="submit" class="font-sans text-xs uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">Logout</button>
+    <!-- 사이드바 -->
+    <aside class="w-64 border-r border-ink/5 bg-paper flex flex-col pt-8 pb-6 h-screen sticky top-0 hidden md:flex shrink-0">
+        <!-- 새 방 만들기 버튼 -->
+        <div class="px-6 mb-8">
+            <form action="<c:url value='/chat'/>" method="post">
+                <input type="hidden" name="action" value="createRoom">
+                <button type="submit" class="w-full flex items-center justify-center py-2.5 bg-ink text-paper rounded-sm hover:bg-ink/80 transition-colors font-bold text-[0.85rem] tracking-wide">
+                    + 새 대화방
+                </button>
             </form>
         </div>
-        <h1 class="font-serif text-3xl font-black tracking-tight text-ink mb-3">대화의 기록</h1>
-    </header>
-
-    <!-- 대화 본문 영역 -->
-    <main id="chatHistory" class="flex-1 w-full max-w-2xl mx-auto px-6 py-12 flex flex-col overflow-y-auto scroll-smooth" aria-live="polite">
         
-        <c:if test="${empty chats}">
-            <div class="m-auto text-center animate-fade-in-up opacity-0" style="animation-delay: 0.2s;">
-                <p class="font-serif text-xl text-ink/70 leading-relaxed text-balance">
-                    아직 쓰여지지 않은 페이지입니다.<br>
-                    하단에서 첫 질문을 던져 이야기를 시작해 보세요.
-                </p>
-            </div>
-        </c:if>
-
-        <c:forEach var="chat" items="${chats}">
-            <c:set var="isUser" value="${chat.owner == 'user' || chat.owner == 'USER' || chat.owner == 'User'}" />
-            
-            <!-- 말풍선이나 테두리 없이, 단락(Paragraph)과 여백만으로 대화를 구분 -->
-            <article class="mb-14 animate-fade-in-up opacity-0" style="animation-delay: 0.1s;">
-                <!-- 발화자 및 시간 정보 -->
-                <header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">
-                    <span class="font-serif font-bold text-lg ${isUser ? 'text-ink' : 'text-accent'}">
-                        ${isUser ? 'Q.' : 'A.'}
-                    </span>
-                    
-                    <time datetime="${chat.timestamp}" class="font-sans text-xs text-meta/70 tabular-nums">
-                        ${chat.timestamp}
-                    </time>
-                </header>
-                
-                <!-- 대화 내용: 본문용 폰트(Pretendard)로 가독성을 극대화하고 자간/행간을 넓게 씀 -->
-                <div class="px-5 py-4 border ${isUser ? 'border-ink/10 rounded-2xl rounded-tl-sm' : 'border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5'} font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">${chat.message}</div>
-            </article>
-        </c:forEach>
-    </main>
-
-    <!-- 입력 폼 영역: 버튼이나 네모난 박스 없이 밑줄 하나로 처리 -->
-    <footer class="bg-paper pb-12 pt-6 sticky bottom-0">
-        <div class="w-full h-12 bg-gradient-to-t from-paper to-transparent absolute bottom-full left-0 pointer-events-none"></div>
-        <div class="max-w-2xl mx-auto px-6">
-            <form id="chatForm" action="<c:url value="/chat"/>" method="post" class="flex flex-col gap-4">
-                
-                <!-- 대화 입력 밑줄 UI -->
-                <div class="flex items-center gap-4 border-b border-ink/20 pb-3 transition-colors focus-within:border-accent">
-                    <label for="message-input" class="sr-only">메시지 입력</label>
-                    <input
-                        type="text"
-                        id="message-input"
-                        name="message"
-                        class="flex-1 bg-transparent border-none p-0 text-ink font-serif text-lg 
-                               placeholder:text-meta/40 placeholder:italic focus:ring-0"
-                        placeholder="이곳에 당신의 생각을 적어주세요..."
-                        required
-                        autocomplete="off"
-                        spellcheck="false"
-                    />
-                    
-                    <button type="submit" id="sendBtn" aria-label="기록하기"
-                            class="font-serif font-bold text-accent/80 hover:text-accent transition-colors group flex items-center gap-1 disabled:opacity-50">
-                        <span id="sendText">기록하기</span>
-                        <span id="sendArrow" class="inline-block transition-transform group-hover:translate-x-1">→</span>
-                        <!-- 로딩 스피너 (초기 숨김) -->
-                        <div id="loadingSpinner" class="hidden w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></div>
-                    </button>
+        <!-- 대화방 목록 -->
+        <nav class="flex-1 overflow-y-auto px-4 flex flex-col gap-1" aria-label="대화방 목록">
+            <c:forEach var="room" items="${rooms}">
+                <c:set var="isActive" value="${room.id == currentRoomId}" />
+                <div class="group flex items-center justify-between px-3 py-2.5 rounded-sm transition-colors ${isActive ? 'bg-ink/5' : 'hover:bg-ink/5'}">
+                    <a href="<c:url value='/chat'/>?roomId=${room.id}" class="flex-1 truncate text-sm ${isActive ? 'font-bold text-ink' : 'text-ink/70 hover:text-ink'} transition-colors">
+                        ${room.title}
+                    </a>
+                    <form action="<c:url value='/chat'/>" method="post" class="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ml-2 shrink-0">
+                        <input type="hidden" name="action" value="deleteRoom">
+                        <input type="hidden" name="roomId" value="${room.id}">
+                        <button type="submit" class="text-meta/40 hover:text-accent text-sm p-1 leading-none" title="삭제" onclick="return confirm('이 대화방을 정말 삭제할까요?');">
+                            ✕
+                        </button>
+                    </form>
                 </div>
-
-                <!-- 모델 선택 (우측 하단 작게 배치) -->
-                <div class="self-end relative" id="custom-select-container">
-                    <label for="model-select-hidden" class="sr-only">모델 선택</label>
-                    <input type="hidden" name="model" id="model-select-hidden" value="gemini-3.1-flash-lite">
-                    
-                    <button type="button" id="custom-select-btn" class="flex items-center gap-1.5 bg-transparent border-none text-xs text-meta/70 font-sans cursor-pointer hover:text-ink transition-colors focus:ring-0 group">
-                        <span id="custom-select-text">Gemini 3.1 Flash Lite</span>
-                        <span class="text-[0.6rem] transition-transform duration-200" id="custom-select-arrow">▼</span>
-                    </button>
-
-                    <div id="custom-select-dropdown" class="absolute bottom-full right-0 mb-2 w-44 bg-paper border border-ink/10 shadow-sm rounded-sm opacity-0 invisible transition-all duration-200 origin-bottom-right transform scale-95 z-50">
-                        <ul class="py-1 flex flex-col font-sans text-xs">
-                            <li>
-                                <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="gemma-4-26b-a4b-it">Gemma 4 (26B)</button>
-                            </li>
-                            <li>
-                                <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="gemma-4-31b-it">Gemma 4 (31B)</button>
-                            </li>
-                            <li>
-                                <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors font-bold" data-value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</button>
-                            </li>
-                            <li>
-                                <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="openai/gpt-oss-120b">GPT OSS 120B (Groq)</button>
-                            </li>
-                            <li>
-                                <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="meta/llama-3.1-8b-instruct">Llama 3.1 8B (NIM)</button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+            </c:forEach>
+        </nav>
+        
+        <!-- 하단: 유저 정보 및 로그아웃 -->
+        <div class="mt-auto px-6 pt-6 border-t border-ink/5">
+            <div class="text-xs text-meta/70 truncate mb-3">${currentUserEmail}</div>
+            <form action="<c:url value='/logout'/>" method="post">
+                <button type="submit" class="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">Logout</button>
             </form>
         </div>
-    </footer>
+    </aside>
+
+    <!-- 오른쪽 본문 영역 -->
+    <div class="flex-1 flex flex-col min-h-screen w-full relative">
+        <!-- 헤더 -->
+        <header class="pt-16 pb-12 text-center border-b border-ink/5 mx-auto w-full max-w-2xl px-6">
+            <h1 class="font-serif text-3xl font-black tracking-tight text-ink mb-2">대화의 기록</h1>
+            <p class="font-sans text-xs text-meta/60 tracking-wider">ArChat AI Agent</p>
+        </header>
+
+        <!-- 대화 본문 영역 -->
+        <main id="chatHistory" class="flex-1 w-full max-w-2xl mx-auto px-6 py-12 flex flex-col overflow-y-auto scroll-smooth" aria-live="polite">
+            <c:if test="${empty chats}">
+                <div class="m-auto text-center animate-fade-in-up opacity-0" style="animation-delay: 0.2s;">
+                    <p class="font-serif text-xl text-ink/70 leading-relaxed text-balance">
+                        아직 쓰여지지 않은 페이지입니다.<br>
+                        하단에서 첫 질문을 던져 이야기를 시작해 보세요.
+                    </p>
+                </div>
+            </c:if>
+
+            <c:forEach var="chat" items="${chats}">
+                <c:set var="isUser" value="${chat.owner == 'user' || chat.owner == 'USER' || chat.owner == 'User'}" />
+                <article class="mb-14 animate-fade-in-up opacity-0" style="animation-delay: 0.1s;">
+                    <header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">
+                        <span class="font-serif font-bold text-lg ${isUser ? 'text-ink' : 'text-accent'}">
+                            ${isUser ? 'Q.' : 'A.'}
+                        </span>
+                        <time datetime="${chat.timestamp}" class="font-sans text-xs text-meta/70 tabular-nums">
+                            ${chat.timestamp}
+                        </time>
+                    </header>
+                    <div class="px-5 py-4 border ${isUser ? 'border-ink/10 rounded-2xl rounded-tl-sm' : 'border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5'} font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">${chat.message}</div>
+                </article>
+            </c:forEach>
+        </main>
+
+        <!-- 입력 폼 영역 -->
+        <footer class="bg-paper pb-12 pt-6 sticky bottom-0">
+            <div class="w-full h-12 bg-gradient-to-t from-paper to-transparent absolute bottom-full left-0 pointer-events-none"></div>
+            <div class="max-w-2xl mx-auto px-6">
+                <form id="chatForm" action="<c:url value="/chat"/>" method="post" class="flex flex-col gap-4">
+                    <input type="hidden" name="roomId" value="${currentRoomId}">
+                    
+                    <div class="flex items-center gap-4 border-b border-ink/20 pb-3 transition-colors focus-within:border-accent">
+                        <label for="message-input" class="sr-only">메시지 입력</label>
+                        <input
+                            type="text"
+                            id="message-input"
+                            name="message"
+                            class="flex-1 bg-transparent border-none p-0 text-ink font-serif text-lg 
+                                   placeholder:text-meta/40 placeholder:italic focus:ring-0"
+                            placeholder="이곳에 당신의 생각을 적어주세요..."
+                            required
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        
+                        <button type="submit" id="sendBtn" aria-label="기록하기"
+                                class="font-serif font-bold text-accent/80 hover:text-accent transition-colors group flex items-center gap-1 disabled:opacity-50">
+                            <span id="sendText">기록하기</span>
+                            <span id="sendArrow" class="inline-block transition-transform group-hover:translate-x-1">→</span>
+                            <div id="loadingSpinner" class="hidden w-4 h-4 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></div>
+                        </button>
+                    </div>
+
+                    <!-- 모델 선택 -->
+                    <div class="self-end relative" id="custom-select-container">
+                        <label for="model-select-hidden" class="sr-only">모델 선택</label>
+                        <input type="hidden" name="model" id="model-select-hidden" value="gemini-3.1-flash-lite">
+                        
+                        <button type="button" id="custom-select-btn" class="flex items-center gap-1.5 bg-transparent border-none text-xs text-meta/70 font-sans cursor-pointer hover:text-ink transition-colors focus:ring-0 group">
+                            <span id="custom-select-text">Gemini 3.1 Flash Lite</span>
+                            <span class="text-[0.6rem] transition-transform duration-200" id="custom-select-arrow">▼</span>
+                        </button>
+
+                        <div id="custom-select-dropdown" class="absolute bottom-full right-0 mb-2 w-44 bg-paper border border-ink/10 shadow-sm rounded-sm opacity-0 invisible transition-all duration-200 origin-bottom-right transform scale-95 z-50">
+                            <ul class="py-1 flex flex-col font-sans text-xs">
+                                <li>
+                                    <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="gemma-4-26b-a4b-it">Gemma 4 (26B)</button>
+                                </li>
+                                <li>
+                                    <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="gemma-4-31b-it">Gemma 4 (31B)</button>
+                                </li>
+                                <li>
+                                    <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors font-bold" data-value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</button>
+                                </li>
+                                <li>
+                                    <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="openai/gpt-oss-120b">GPT OSS 120B (Groq)</button>
+                                </li>
+                                <li>
+                                    <button type="button" class="w-full text-left px-3 py-2 text-ink/70 hover:text-ink hover:bg-ink/5 transition-colors" data-value="meta/llama-3.1-8b-instruct">Llama 3.1 8B (NIM)</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </footer>
+    </div>
 
     <!-- 자바스크립트 로직 (이전의 타이핑 애니메이션을 에디토리얼 무드에 맞게 이식) -->
     <script>

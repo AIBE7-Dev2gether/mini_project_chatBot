@@ -23,7 +23,7 @@ public class SupabaseChatRepository implements ChatRepository {
 
     @Override
     public void save(Chat chat) {
-        String sql = "INSERT INTO chats (message, owner, user_id, model, timestamp) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO chats (message, owner, user_id, room_id, model, timestamp) VALUES (?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -31,8 +31,9 @@ public class SupabaseChatRepository implements ChatRepository {
             pstmt.setString(1, chat.message());
             pstmt.setString(2, chat.owner());
             pstmt.setString(3, chat.userId());
-            pstmt.setString(4, chat.model());
-            pstmt.setString(5, chat.timestamp());
+            pstmt.setString(4, chat.roomId());
+            pstmt.setString(5, chat.model());
+            pstmt.setString(6, chat.timestamp());
             
             pstmt.executeUpdate();
             
@@ -43,14 +44,14 @@ public class SupabaseChatRepository implements ChatRepository {
     }
 
     @Override
-    public List<Chat> findAllByUserId(String userId) {
-        String sql = "SELECT message, owner, user_id, model, timestamp FROM chats WHERE user_id = ? ORDER BY id ASC";
+    public List<Chat> findAllByRoomId(String roomId) {
+        String sql = "SELECT message, owner, user_id, room_id, model, timestamp FROM chats WHERE room_id = ? ORDER BY id ASC";
         List<Chat> chatList = new ArrayList<>();
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
              
-            pstmt.setString(1, userId);
+            pstmt.setString(1, roomId);
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -58,6 +59,7 @@ public class SupabaseChatRepository implements ChatRepository {
                             rs.getString("message"),
                             rs.getString("owner"),
                             rs.getString("user_id"),
+                            rs.getString("room_id"),
                             rs.getString("model"),
                             rs.getString("timestamp")
                     );
@@ -70,5 +72,18 @@ public class SupabaseChatRepository implements ChatRepository {
         }
         
         return chatList;
+    }
+
+    @Override
+    public void deleteByRoomId(String roomId) {
+        String sql = "DELETE FROM chats WHERE room_id = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, roomId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("DB 삭제 중 에러 발생", e);
+        }
     }
 }
