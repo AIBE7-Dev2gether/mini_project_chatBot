@@ -17,80 +17,96 @@
                     colors: {
                         paper: '#FAF9F4',
                         ink: '#2A2A2A',
-                        accent: '#9A3B3B'
+                        meta: '#888888',
+                        accent: '#9A3B3B',
                     },
                     fontFamily: {
                         sans: ['Pretendard', 'sans-serif'],
-                        serif: ['"Noto Serif KR"', 'serif']
+                        serif: ['"Noto Serif KR"', 'serif'],
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
                     }
                 }
             }
         }
     </script>
+    <style>
+        body { background-color: #FAF9F4; }
+        *:focus { outline: none; }
+    </style>
 </head>
-<body class="min-h-screen bg-paper text-ink font-sans antialiased flex items-center justify-center px-6">
-<main class="w-full max-w-md">
-    <section class="border border-ink/10 rounded-[28px] bg-white/60 backdrop-blur px-8 py-10 shadow-sm">
-        <header class="mb-8 text-center">
-            <p class="font-sans text-xs uppercase tracking-[0.3em] text-ink/45 mb-3">ArChat Access</p>
-            <h1 class="font-serif text-3xl font-black">로그인</h1>
-            <p class="mt-3 text-sm text-ink/60 leading-6">
-                Supabase 인증 후 서버 세션으로 로그인 상태를 유지합니다.
-            </p>
+<body class="min-h-screen bg-paper text-ink font-sans antialiased flex flex-col items-center justify-center selection:bg-accent selection:text-white">
+    <div class="w-full max-w-sm mx-auto px-6 -mt-10">
+        <!-- 헤더 -->
+        <header class="mb-12 text-center animate-fade-in-up opacity-0" style="animation-delay: 0.1s;">
+            <h1 class="font-serif text-4xl font-black tracking-tight text-ink">로그인</h1>
         </header>
 
-        <% if (request.getParameter("error") != null) { %>
-            <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <%= request.getParameter("error") %>
-            </div>
-        <% } %>
-        <% if ("1".equals(request.getParameter("expired"))) { %>
-            <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                세션이 만료되었습니다. 다시 로그인해 주세요.
-            </div>
-        <% } %>
-        <% if ("1".equals(request.getParameter("logout"))) { %>
-            <div class="mb-5 rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink/70">
-                로그아웃되었습니다.
-            </div>
-        <% } %>
+        <main class="animate-fade-in-up opacity-0" style="animation-delay: 0.2s;">
+            <% if (request.getParameter("error") != null) { %>
+                <div class="mb-8 text-center text-sm font-serif italic text-accent">
+                    * <%= request.getParameter("error") %>
+                </div>
+            <% } %>
 
-        <form action="<%= request.getContextPath() %>/login" method="post" class="space-y-5">
-            <div>
-                <label for="email" class="mb-2 block text-sm text-ink/70">이메일</label>
-                <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        autocomplete="email"
-                        class="w-full rounded-2xl border border-ink/15 bg-white px-4 py-3 text-sm focus:border-accent"
-                />
-            </div>
-            <div>
-                <label for="password" class="mb-2 block text-sm text-ink/70">비밀번호</label>
-                <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        required
-                        autocomplete="current-password"
-                        class="w-full rounded-2xl border border-ink/15 bg-white px-4 py-3 text-sm focus:border-accent"
-                />
-            </div>
-            <button
-                    type="submit"
-                    class="w-full rounded-2xl bg-ink px-4 py-3 font-serif text-base font-bold text-paper transition hover:bg-accent"
-            >
-                로그인
-            </button>
-        </form>
+            <% if ("1".equals(request.getParameter("logout"))) { %>
+                <div class="mb-8 text-center text-sm font-serif italic text-meta/80">
+                    로그아웃되었습니다.
+                </div>
+            <% } %>
 
-        <p class="mt-6 text-center text-sm text-ink/60">
-            계정이 없으면
-            <a href="<%= request.getContextPath() %>/signup" class="text-accent underline underline-offset-4">회원가입</a>
-        </p>
-    </section>
-</main>
+            <form action="<%= request.getContextPath() %>/login" method="post" class="space-y-10">
+                <!-- 이메일 입력 (밑줄) -->
+                <div class="relative group border-b border-ink/20 pb-2 transition-colors focus-within:border-accent">
+                    <label for="email" class="absolute -top-5 left-0 text-[0.65rem] uppercase tracking-widest text-meta/70 transition-colors group-focus-within:text-accent">E-Mail</label>
+                    <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            required
+                            autocomplete="email"
+                            placeholder="your@email.com"
+                            class="w-full bg-transparent border-none p-0 text-ink font-serif text-lg placeholder:text-meta/30 placeholder:italic focus:ring-0"
+                    />
+                </div>
+
+                <!-- 비밀번호 입력 (밑줄) -->
+                <div class="relative group border-b border-ink/20 pb-2 transition-colors focus-within:border-accent">
+                    <label for="password" class="absolute -top-5 left-0 text-[0.65rem] uppercase tracking-widest text-meta/70 transition-colors group-focus-within:text-accent">Password</label>
+                    <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            required
+                            autocomplete="current-password"
+                            placeholder="••••••••"
+                            class="w-full bg-transparent border-none p-0 text-ink font-serif text-lg placeholder:text-meta/30 placeholder:italic focus:ring-0 tracking-[0.2em]"
+                    />
+                </div>
+
+                <!-- 블록 형태 버튼 -->
+                <div class="pt-4">
+                    <button
+                            type="submit"
+                            class="w-full bg-ink text-paper py-3.5 rounded-sm font-sans font-bold text-[0.85rem] tracking-[0.2em] uppercase transition-colors hover:bg-ink/80 focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper focus:ring-ink"
+                    >
+                        Log In
+                    </button>
+                </div>
+            </form>
+
+            <p class="mt-12 text-center text-[0.8rem] text-meta/70 tracking-wide font-sans">
+                아직 빈 페이지가 필요하신가요?<br>
+                <a href="<%= request.getContextPath() %>/signup" class="inline-block mt-2 text-ink font-bold border-b border-ink hover:text-accent hover:border-accent transition-colors pb-0.5">회원가입</a>
+            </p>
+        </main>
+    </div>
 </body>
 </html>

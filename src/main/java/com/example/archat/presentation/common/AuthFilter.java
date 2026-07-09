@@ -23,9 +23,7 @@ public class AuthFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
 
         if (!sessionManager.isAuthenticated(req)) {
-            boolean expiredSession = req.getRequestedSessionId() != null && !req.isRequestedSessionIdValid();
-            String redirectUrl = req.getContextPath() + "/login" + (expiredSession ? "?expired=1" : "");
-            resp.sendRedirect(redirectUrl);
+            resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
 
