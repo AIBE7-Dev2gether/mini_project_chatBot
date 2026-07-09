@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>대화의 기록</title>
-    
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="${pageContext.request.contextPath}/images/favicon.png">
     <!-- 웹 폰트 (Pretendard & Noto Serif KR) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
