@@ -20,10 +20,11 @@ public class GenAIConfig {
 
         // gemma-4-26b 모델(MoE)은 systemInstruction 파라미터를 받을 때 500 에러를 뱉는 알려진 이슈가 있어 분기 처리
         if (modelName == null || !modelName.contains("gemma-4-26b")) {
+            String timeContext = "참고로 현재 시스템 시각은 " + java.time.ZonedDateTime.now().toString() + " 입니다.";
             builder.systemInstruction(
                     Content.builder()
                             .role("system")
-                            .parts(Part.builder().text(SYSTEM_INSTRUCTION).build())
+                            .parts(Part.builder().text(SYSTEM_INSTRUCTION + "\n" + timeContext).build())
                             .build()
             );
         }

@@ -45,7 +45,7 @@ public class OpenAICompatibleProvider implements ChatProvider {
             HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
 
             if (res.statusCode() != 200) {
-                return "문제가 생겼어요 : API %d - %s".formatted(res.statusCode(), res.body());
+                return "문제가 생겼어요 : API " + res.statusCode() + " - " + res.body();
             }
 
             JsonNode root = MAPPER.readTree(res.body());
@@ -53,7 +53,7 @@ public class OpenAICompatibleProvider implements ChatProvider {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return "문제가 생겼어요 : %s".formatted(e.getMessage());
+            return "문제가 생겼어요 : " + e.getMessage();
         }
     }
 
@@ -64,9 +64,10 @@ public class OpenAICompatibleProvider implements ChatProvider {
 
         ArrayNode messages = payload.putArray("messages");
 
+        String timeContext = "참고로 현재 시스템 시각은 " + java.time.ZonedDateTime.now().toString() + " 입니다.";
         messages.addObject()
                 .put("role", "system")
-                .put("content", systemInstruction);
+                .put("content", systemInstruction + "\n" + timeContext);
 
         for (Chat c : history) {
             messages.addObject()
