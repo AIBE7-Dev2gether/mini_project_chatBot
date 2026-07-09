@@ -102,7 +102,6 @@
         <!-- 헤더 -->
         <header class="pt-16 pb-12 text-center border-b border-ink/5 mx-auto w-full max-w-2xl px-6">
             <h1 class="font-serif text-3xl font-black tracking-tight text-ink mb-2">대화의 기록</h1>
-            <p class="font-sans text-xs text-meta/60 tracking-wider">ArChat AI Agent</p>
         </header>
 
         <!-- 대화 본문 영역 -->
