@@ -13,6 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 
+    <!-- Markdown Parser & DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
     <!-- Tailwind CSS v3 CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -53,6 +57,111 @@
         
         /* 포커스시 기본 아웃라인 제거 (Tailwind border로 대체) */
         *:focus { outline: none; }
+
+        /* 에디토리얼 마크다운 스타일 */
+        .markdown-body {
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.8;
+            color: rgba(42, 42, 42, 0.9);
+            word-break: break-word;
+        }
+        .markdown-body p { margin-bottom: 1em; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body strong { font-weight: 700; color: #2A2A2A; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            font-family: 'Noto Serif KR', serif;
+            font-weight: 700;
+            color: #2A2A2A;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        .markdown-body h1 { font-size: 1.4em; }
+        .markdown-body h2 { font-size: 1.25em; }
+        .markdown-body h3 { font-size: 1.1em; }
+        .markdown-body ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body li { margin-bottom: 0.3em; }
+        .markdown-body blockquote {
+            border-left: 3px solid #9A3B3B;
+            padding-left: 1em;
+            margin: 1em 0;
+            color: #888888;
+            font-style: italic;
+        }
+        .markdown-body code {
+            background-color: rgba(42, 42, 42, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #9A3B3B;
+        }
+        .markdown-body pre {
+            background-color: #2A2A2A;
+            color: #FAF9F4;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        .markdown-body pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* 사용자 말풍선 마크다운 스타일 (어두운 먹색 배경용) */
+        .markdown-body-user {
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.6;
+            color: #FAF9F4;
+            word-break: break-word;
+        }
+        .markdown-body-user p { margin-bottom: 0.8em; }
+        .markdown-body-user p:last-child { margin-bottom: 0; }
+        .markdown-body-user strong { font-weight: 700; color: #FFFFFF; }
+        .markdown-body-user h1, .markdown-body-user h2, .markdown-body-user h3 {
+            font-family: 'Noto Serif KR', serif;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+        }
+        .markdown-body-user h1 { font-size: 1.3em; }
+        .markdown-body-user h2 { font-size: 1.15em; }
+        .markdown-body-user h3 { font-size: 1.05em; }
+        .markdown-body-user ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 0.8em; }
+        .markdown-body-user ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 0.8em; }
+        .markdown-body-user li { margin-bottom: 0.2em; }
+        .markdown-body-user blockquote {
+            border-left: 3px solid rgba(250, 249, 244, 0.4);
+            padding-left: 1em;
+            margin: 0.8em 0;
+            color: rgba(250, 249, 244, 0.7);
+            font-style: italic;
+        }
+        .markdown-body-user code {
+            background-color: rgba(250, 249, 244, 0.15);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #FFFFFF;
+        }
+        .markdown-body-user pre {
+            background-color: #1A1A1A;
+            color: #FAF9F4;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1em 0;
+            border: 1px solid rgba(250,249,244,0.1);
+        }
+        .markdown-body-user pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+        }
     </style>
 </head>
 <body class="bg-paper text-ink font-sans antialiased min-h-screen flex selection:bg-accent selection:text-white">
@@ -127,16 +236,29 @@
 
             <c:forEach var="chat" items="${chats}">
                 <c:set var="isUser" value="${chat.owner == 'user' || chat.owner == 'USER' || chat.owner == 'User'}" />
-                <article class="mb-14 animate-fade-in-up opacity-0" style="animation-delay: 0.1s;">
-                    <header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">
-                        <span class="font-serif font-bold text-lg ${isUser ? 'text-ink' : 'text-accent'}">
+                <article class="mb-10 animate-fade-in-up opacity-0 chat-article flex flex-col ${isUser ? 'items-end' : 'items-start'}" style="animation-delay: 0.1s;">
+                    <header class="mb-2 flex items-baseline gap-x-2 gap-y-1 ${isUser ? 'flex-row-reverse' : ''}">
+                        <span class="font-serif font-bold text-base ${isUser ? 'text-ink/80' : 'text-accent'}">
                             ${isUser ? 'Q.' : 'A.'}
                         </span>
-                        <time datetime="${chat.timestamp}" class="font-sans text-xs text-meta/70 tabular-nums">
+                        <time datetime="${chat.timestamp}" class="font-sans text-xs text-meta/60 tabular-nums">
                             ${chat.timestamp}
                         </time>
                     </header>
-                    <div class="px-5 py-4 border ${isUser ? 'border-ink/10 rounded-2xl rounded-tl-sm' : 'border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5'} font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">${chat.message}</div>
+                    <c:choose>
+                        <c:when test="${isUser}">
+                            <div class="px-5 py-3.5 max-w-[85%] sm:max-w-[75%] bg-ink text-paper rounded-2xl rounded-tr-sm markdown-body-user">
+                                <div class="raw-content hidden"><c:out value="${chat.message}" /></div>
+                                <div class="parsed-content"></div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="w-full pt-1 markdown-body text-ink/90">
+                                <div class="raw-content hidden"><c:out value="${chat.message}" /></div>
+                                <div class="parsed-content"></div>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                 </article>
             </c:forEach>
         </main>
@@ -296,6 +418,23 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
+            // marked 옵션 설정
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true
+                });
+            }
+
+            // 기존 채팅 데이터 마크다운 파싱
+            document.querySelectorAll('.chat-article').forEach(function(article) {
+                var rawNode = article.querySelector('.raw-content');
+                var parsedNode = article.querySelector('.parsed-content');
+                if (rawNode && parsedNode && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                    parsedNode.innerHTML = DOMPurify.sanitize(marked.parse(rawNode.textContent));
+                }
+            });
+
             // 타임스탬프 포맷팅 (긴 서버 날짜를 "오후 5:09" 형태로 깔끔하게 변환)
             document.querySelectorAll('time').forEach(function(timeEl) {
                 var rawDate = timeEl.getAttribute('datetime');
@@ -400,13 +539,20 @@
                     if (emptyState) emptyState.remove();
 
                     var userRow = document.createElement('article');
-                    userRow.className = 'mb-14 animate-fade-in-up';
+                    userRow.className = 'mb-10 animate-fade-in-up chat-article flex flex-col items-end';
+                    
+                    var userParsedMessage = (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') 
+                        ? DOMPurify.sanitize(marked.parse(message)) 
+                        : escapeHtml(message);
+
                     userRow.innerHTML = 
-                        '<header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">' +
-                            '<span class="font-serif font-bold text-lg text-ink">Q.</span>' +
-                            '<time class="font-sans text-xs text-meta/70 tabular-nums">방금 전</time>' +
+                        '<header class="mb-2 flex items-baseline flex-row-reverse gap-x-2 gap-y-1">' +
+                            '<span class="font-serif font-bold text-base text-ink/80">Q.</span>' +
+                            '<time class="font-sans text-xs text-meta/60 tabular-nums">방금 전</time>' +
                         '</header>' +
-                        '<div class="px-5 py-4 border border-ink/10 rounded-2xl rounded-tl-sm font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">' + escapeHtml(message) + '</div>';
+                        '<div class="px-5 py-3.5 max-w-[85%] sm:max-w-[75%] bg-ink text-paper rounded-2xl rounded-tr-sm markdown-body-user">' +
+                            '<div class="parsed-content">' + userParsedMessage + '</div>' +
+                        '</div>';
                     
                     chatHistory.appendChild(userRow);
                     chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -422,17 +568,17 @@
                     // 2. 에디토리얼 무드에 맞는 AI 로딩(작성 중) 요소 추가
                     var loadingRow = document.createElement('article');
                     loadingRow.id = 'ai-loading';
-                    loadingRow.className = 'mb-14 animate-fade-in-up';
+                    loadingRow.className = 'mb-10 animate-fade-in-up flex flex-col items-start';
                     loadingRow.innerHTML = 
-                        '<header class="mb-3 flex items-baseline gap-3">' +
-                            '<span class="font-serif font-bold text-lg text-accent">A.</span>' +
+                        '<header class="mb-2 flex items-baseline gap-2">' +
+                            '<span class="font-serif font-bold text-base text-accent">A.</span>' +
                         '</header>' +
-                        '<div class="px-5 py-4 border border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5 font-sans text-[1.05rem] leading-[1.8] text-ink/50 italic flex gap-1 items-center">' +
+                        '<div class="w-full pt-1 font-sans text-base text-ink/50 italic flex gap-1 items-center">' +
                             '문장을 가다듬는 중' +
                             '<span class="flex gap-0.5 ml-1">' +
-                                '<span class="w-1 h-1 bg-ink/50 rounded-full animate-bounce" style="animation-delay: -0.32s"></span>' +
-                                '<span class="w-1 h-1 bg-ink/50 rounded-full animate-bounce" style="animation-delay: -0.16s"></span>' +
-                                '<span class="w-1 h-1 bg-ink/50 rounded-full animate-bounce"></span>' +
+                                '<span class="w-1 h-1 bg-ink/40 rounded-full animate-bounce" style="animation-delay: -0.32s"></span>' +
+                                '<span class="w-1 h-1 bg-ink/40 rounded-full animate-bounce" style="animation-delay: -0.16s"></span>' +
+                                '<span class="w-1 h-1 bg-ink/40 rounded-full animate-bounce"></span>' +
                             '</span>' +
                         '</div>';
                     
@@ -477,14 +623,20 @@
                             }
                         } catch(e) {}
 
+                        var aiParsedMessage = (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') 
+                            ? DOMPurify.sanitize(marked.parse(data.message)) 
+                            : escapeHtml(data.message);
+
                         var aiRow = document.createElement('article');
-                        aiRow.className = 'mb-14 animate-fade-in-up';
+                        aiRow.className = 'mb-10 animate-fade-in-up chat-article flex flex-col items-start';
                         aiRow.innerHTML = 
-                            '<header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">' +
-                                '<span class="font-serif font-bold text-lg text-accent">A.</span>' +
-                                '<time class="font-sans text-xs text-meta/70 tabular-nums">' + formattedTime + '</time>' +
+                            '<header class="mb-2 flex items-baseline gap-x-2 gap-y-1">' +
+                                '<span class="font-serif font-bold text-base text-accent">A.</span>' +
+                                '<time class="font-sans text-xs text-meta/60 tabular-nums">' + formattedTime + '</time>' +
                             '</header>' +
-                            '<div class="px-5 py-4 border border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5 font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">' + escapeHtml(data.message) + '</div>';
+                            '<div class="w-full pt-1 markdown-body text-ink/90">' +
+                                '<div class="parsed-content">' + aiParsedMessage + '</div>' +
+                            '</div>';
                         
                         chatHistory.appendChild(aiRow);
                         chatHistory.scrollTop = chatHistory.scrollHeight;
