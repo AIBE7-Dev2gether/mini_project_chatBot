@@ -84,12 +84,24 @@ public class ChatController extends BaseController {
             }
             resp.sendRedirect("%s/%s".formatted(req.getContextPath(), "chat"));
             return;
+        } else if ("renameRoom".equals(action)) {
+            String roomId = req.getParameter("roomId");
+            String newTitle = req.getParameter("newTitle");
+            if (roomId != null && newTitle != null && !newTitle.trim().isEmpty()) {
+                chatUseCase.renameRoom(roomId, newTitle.trim());
+            }
+            resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", roomId));
+            return;
         }
 
-        String roomId = req.getParameter("roomId");
+        String submittedRoomId = req.getParameter("roomId");
+        String roomId = submittedRoomId;
+        boolean isNewRoom = false;
+
         if (roomId == null || roomId.trim().isEmpty()) {
             var room = chatUseCase.createRoom(authUser.userId(), "새 대화방");
             roomId = room.id();
+            isNewRoom = true;
         }
 
         Chat chat = new Chat(
@@ -100,7 +112,20 @@ public class ChatController extends BaseController {
                 req.getParameter("model"),
                 ZonedDateTime.now().toString()
         );
-        chatUseCase.save(chat);
+        Chat aiChat = chatUseCase.save(chat);
+
+        String isAjax = req.getHeader("X-Requested-With");
+        String accept = req.getHeader("Accept");
+
+        if (!isNewRoom && ("XMLHttpRequest".equals(isAjax) || (accept != null && accept.contains("application/json")))) {
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            ChatResponseDTO aiDto = ChatResponseDTO.of(aiChat);
+            mapper.writeValue(resp.getWriter(), aiDto);
+            return;
+        }
+
         resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", roomId));
     }
 }

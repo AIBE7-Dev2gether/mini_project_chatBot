@@ -26,7 +26,7 @@ public class AIChatUseCase implements ChatUseCase {
 
 
     @Override
-    public void save(Chat chat) {
+    public Chat save(Chat chat) {
         chatRepository.save(chat);
         List<Chat> history = chatRepository.findAllByRoomId(chat.roomId());
 
@@ -48,6 +48,7 @@ public class AIChatUseCase implements ChatUseCase {
                 ZonedDateTime.now().toString()
         );
         chatRepository.save(aiChat);
+        return aiChat;
     }
 
 
@@ -72,6 +73,11 @@ public class AIChatUseCase implements ChatUseCase {
     public void deleteRoom(String roomId) {
         chatRepository.deleteByRoomId(roomId);
         chatRoomRepository.deleteById(roomId);
+    }
+
+    @Override
+    public void renameRoom(String roomId, String title) {
+        chatRoomRepository.updateTitle(roomId, title);
     }
 
     // 싱글톤 등록

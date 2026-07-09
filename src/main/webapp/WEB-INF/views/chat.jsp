@@ -13,6 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 
+    <!-- Markdown Parser & DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
     <!-- Tailwind CSS v3 CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -53,6 +57,111 @@
         
         /* 포커스시 기본 아웃라인 제거 (Tailwind border로 대체) */
         *:focus { outline: none; }
+
+        /* 에디토리얼 마크다운 스타일 */
+        .markdown-body {
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.8;
+            color: rgba(42, 42, 42, 0.9);
+            word-break: break-word;
+        }
+        .markdown-body p { margin-bottom: 1em; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body strong { font-weight: 700; color: #2A2A2A; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            font-family: 'Noto Serif KR', serif;
+            font-weight: 700;
+            color: #2A2A2A;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        .markdown-body h1 { font-size: 1.4em; }
+        .markdown-body h2 { font-size: 1.25em; }
+        .markdown-body h3 { font-size: 1.1em; }
+        .markdown-body ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body li { margin-bottom: 0.3em; }
+        .markdown-body blockquote {
+            border-left: 3px solid #9A3B3B;
+            padding-left: 1em;
+            margin: 1em 0;
+            color: #888888;
+            font-style: italic;
+        }
+        .markdown-body code {
+            background-color: rgba(42, 42, 42, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #9A3B3B;
+        }
+        .markdown-body pre {
+            background-color: #2A2A2A;
+            color: #FAF9F4;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        .markdown-body pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* 사용자 말풍선 마크다운 스타일 (어두운 먹색 배경용) */
+        .markdown-body-user {
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.6;
+            color: #FAF9F4;
+            word-break: break-word;
+        }
+        .markdown-body-user p { margin-bottom: 0.8em; }
+        .markdown-body-user p:last-child { margin-bottom: 0; }
+        .markdown-body-user strong { font-weight: 700; color: #FFFFFF; }
+        .markdown-body-user h1, .markdown-body-user h2, .markdown-body-user h3 {
+            font-family: 'Noto Serif KR', serif;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+        }
+        .markdown-body-user h1 { font-size: 1.3em; }
+        .markdown-body-user h2 { font-size: 1.15em; }
+        .markdown-body-user h3 { font-size: 1.05em; }
+        .markdown-body-user ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 0.8em; }
+        .markdown-body-user ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 0.8em; }
+        .markdown-body-user li { margin-bottom: 0.2em; }
+        .markdown-body-user blockquote {
+            border-left: 3px solid rgba(250, 249, 244, 0.4);
+            padding-left: 1em;
+            margin: 0.8em 0;
+            color: rgba(250, 249, 244, 0.7);
+            font-style: italic;
+        }
+        .markdown-body-user code {
+            background-color: rgba(250, 249, 244, 0.15);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #FFFFFF;
+        }
+        .markdown-body-user pre {
+            background-color: #1A1A1A;
+            color: #FAF9F4;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1em 0;
+            border: 1px solid rgba(250,249,244,0.1);
+        }
+        .markdown-body-user pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+        }
     </style>
 </head>
 <body class="bg-paper text-ink font-sans antialiased min-h-screen flex selection:bg-accent selection:text-white">
@@ -77,13 +186,23 @@
                     <a href="<c:url value='/chat'/>?roomId=${room.id}" class="flex-1 truncate text-sm ${isActive ? 'font-bold text-ink' : 'text-ink/70 hover:text-ink'} transition-colors">
                         ${room.title}
                     </a>
-                    <form action="<c:url value='/chat'/>" method="post" class="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ml-2 shrink-0">
-                        <input type="hidden" name="action" value="deleteRoom">
-                        <input type="hidden" name="roomId" value="${room.id}">
-                        <button type="submit" class="text-meta/40 hover:text-accent text-sm p-1 leading-none" title="삭제" onclick="return confirm('이 대화방을 정말 삭제할까요?');">
-                            ✕
+                    <div class="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ml-2 shrink-0 flex items-center">
+                        <form id="renameForm-${room.id}" action="<c:url value='/chat'/>" method="post" class="hidden">
+                            <input type="hidden" name="action" value="renameRoom">
+                            <input type="hidden" name="roomId" value="${room.id}">
+                            <input type="hidden" name="newTitle" id="newTitle-${room.id}" value="">
+                        </form>
+                        <button type="button" class="text-meta/40 hover:text-ink text-sm px-1.5 py-1 leading-none" title="이름 변경" onclick="renameRoom('${room.id}', this.closest('.group').querySelector('a').innerText.trim())">
+                            ✎
                         </button>
-                    </form>
+                        <form action="<c:url value='/chat'/>" method="post" class="inline-block">
+                            <input type="hidden" name="action" value="deleteRoom">
+                            <input type="hidden" name="roomId" value="${room.id}">
+                            <button type="submit" class="text-meta/40 hover:text-accent text-sm px-1.5 py-1 leading-none" title="삭제" onclick="return confirm('이 대화방을 정말 삭제할까요?');">
+                                ✕
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </c:forEach>
         </nav>
@@ -92,7 +211,7 @@
         <div class="mt-auto px-6 pt-6 border-t border-ink/5">
             <div class="text-xs text-meta/70 truncate mb-3">${currentUserEmail}</div>
             <form action="<c:url value='/logout'/>" method="post">
-                <button type="submit" class="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">Logout</button>
+                <button type="submit" class="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">로그아웃</button>
             </form>
         </div>
     </aside>
@@ -117,16 +236,29 @@
 
             <c:forEach var="chat" items="${chats}">
                 <c:set var="isUser" value="${chat.owner == 'user' || chat.owner == 'USER' || chat.owner == 'User'}" />
-                <article class="mb-14 animate-fade-in-up opacity-0" style="animation-delay: 0.1s;">
-                    <header class="mb-3 flex items-baseline flex-wrap gap-x-3 gap-y-1">
-                        <span class="font-serif font-bold text-lg ${isUser ? 'text-ink' : 'text-accent'}">
+                <article class="mb-10 animate-fade-in-up opacity-0 chat-article flex flex-col ${isUser ? 'items-end' : 'items-start'}" style="animation-delay: 0.1s;">
+                    <header class="mb-2 flex items-baseline gap-x-2 gap-y-1 ${isUser ? 'flex-row-reverse' : ''}">
+                        <span class="font-serif font-bold text-base ${isUser ? 'text-ink/80' : 'text-accent'}">
                             ${isUser ? 'Q.' : 'A.'}
                         </span>
-                        <time datetime="${chat.timestamp}" class="font-sans text-xs text-meta/70 tabular-nums">
+                        <time datetime="${chat.timestamp}" class="font-sans text-xs text-meta/60 tabular-nums">
                             ${chat.timestamp}
                         </time>
                     </header>
-                    <div class="px-5 py-4 border ${isUser ? 'border-ink/10 rounded-2xl rounded-tl-sm' : 'border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5'} font-sans text-[1.05rem] leading-[1.8] text-ink/90 whitespace-pre-wrap break-words">${chat.message}</div>
+                    <c:choose>
+                        <c:when test="${isUser}">
+                            <div class="px-5 py-3.5 max-w-[85%] sm:max-w-[75%] bg-ink text-paper rounded-2xl rounded-tr-sm markdown-body-user">
+                                <div class="raw-content hidden"><c:out value="${chat.message}" /></div>
+                                <div class="parsed-content"></div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="w-full pt-1 markdown-body text-ink/90">
+                                <div class="raw-content hidden"><c:out value="${chat.message}" /></div>
+                                <div class="parsed-content"></div>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                 </article>
             </c:forEach>
         </main>
@@ -195,9 +327,114 @@
         </footer>
     </div>
 
-    <!-- 자바스크립트 로직 (이전의 타이핑 애니메이션을 에디토리얼 무드에 맞게 이식) -->
+    <!-- 이름 변경 모달 -->
+    <div id="renameModal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <!-- 배경 딤(Dim) -->
+        <div class="absolute inset-0 bg-ink/10 backdrop-blur-sm transition-opacity" onclick="closeRenameModal()"></div>
+        
+        <!-- 모달 창 -->
+        <div class="relative bg-paper border border-ink/10 shadow-lg p-8 w-full max-w-sm transform scale-95 transition-transform duration-300 mx-4" id="renameModalContent">
+            <h2 class="font-serif text-xl font-bold text-ink mb-6">대화의 주제를 다시 쓰기</h2>
+            
+            <div class="relative group border-b border-ink/20 pb-2 mb-8 transition-colors focus-within:border-accent">
+                <input
+                    type="text"
+                    id="renameModalInput"
+                    class="w-full bg-transparent border-none p-0 text-ink font-serif text-lg placeholder:text-meta/30 focus:ring-0"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+            
+            <div class="flex items-center justify-end gap-5 font-sans text-xs tracking-widest uppercase">
+                <button type="button" onclick="closeRenameModal()" class="text-meta/60 hover:text-ink transition-colors">
+                    취소
+                </button>
+                <button type="button" onclick="submitRename()" class="text-ink font-bold hover:text-accent transition-colors">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자바스크립트 로직 -->
     <script>
+        // 대화방 이름 변경 모달 로직
+        let currentRenameRoomId = null;
+
+        function renameRoom(roomId, currentTitle) {
+            currentRenameRoomId = roomId;
+            const modal = document.getElementById('renameModal');
+            const modalContent = document.getElementById('renameModalContent');
+            const input = document.getElementById('renameModalInput');
+            
+            input.value = currentTitle;
+            
+            // 모달 열기
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+            
+            // 포커스 이동
+            setTimeout(() => {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 100);
+            
+            // Enter 및 Esc 키 지원
+            input.onkeydown = function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitRename();
+                }
+                if (e.key === 'Escape') {
+                    closeRenameModal();
+                }
+            };
+        }
+
+        function closeRenameModal() {
+            const modal = document.getElementById('renameModal');
+            const modalContent = document.getElementById('renameModalContent');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            
+            currentRenameRoomId = null;
+        }
+
+        function submitRename() {
+            if (!currentRenameRoomId) return;
+            const input = document.getElementById('renameModalInput');
+            const newTitle = input.value.trim();
+            
+            if (newTitle !== '') {
+                document.getElementById('newTitle-' + currentRenameRoomId).value = newTitle;
+                document.getElementById('renameForm-' + currentRenameRoomId).submit();
+            } else {
+                closeRenameModal();
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
+            // marked 옵션 설정
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true
+                });
+            }
+
+            // 기존 채팅 데이터 마크다운 파싱
+            document.querySelectorAll('.chat-article').forEach(function(article) {
+                var rawNode = article.querySelector('.raw-content');
+                var parsedNode = article.querySelector('.parsed-content');
+                if (rawNode && parsedNode && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                    parsedNode.innerHTML = DOMPurify.sanitize(marked.parse(rawNode.textContent));
+                }
+            });
+
             // 타임스탬프 포맷팅 (긴 서버 날짜를 "오후 5:09" 형태로 깔끔하게 변환)
             document.querySelectorAll('time').forEach(function(timeEl) {
                 var rawDate = timeEl.getAttribute('datetime');
@@ -290,37 +527,149 @@
 
             if(chatForm) {
                 chatForm.addEventListener('submit', function(e) {
-                    if(messageInput.value.trim() === '') {
+                    var message = messageInput.value.trim();
+                    if(message === '') {
                         e.preventDefault();
                         return;
                     }
+                    e.preventDefault();
 
-                    // 전송 버튼 상태 변경
+                    // 1. 사용자 질문을 즉각적으로 화면에 렌더링 (Optimistic Update)
+                    var emptyState = chatHistory.querySelector('.m-auto.text-center');
+                    if (emptyState) emptyState.remove();
+
+                    var userRow = document.createElement('article');
+                    userRow.className = 'mb-10 animate-fade-in-up chat-article flex flex-col items-end';
+                    
+                    var userParsedMessage = (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') 
+                        ? DOMPurify.sanitize(marked.parse(message)) 
+                        : escapeHtml(message);
+
+                    userRow.innerHTML = 
+                        '<header class="mb-2 flex items-baseline flex-row-reverse gap-x-2 gap-y-1">' +
+                            '<span class="font-serif font-bold text-base text-ink/80">Q.</span>' +
+                            '<time class="font-sans text-xs text-meta/60 tabular-nums">방금 전</time>' +
+                        '</header>' +
+                        '<div class="px-5 py-3.5 max-w-[85%] sm:max-w-[75%] bg-ink text-paper rounded-2xl rounded-tr-sm markdown-body-user">' +
+                            '<div class="parsed-content">' + userParsedMessage + '</div>' +
+                        '</div>';
+                    
+                    chatHistory.appendChild(userRow);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                    // 입력창 초기화 및 버튼 비활성화
+                    messageInput.value = '';
+                    messageInput.disabled = true;
                     sendBtn.disabled = true;
                     sendText.classList.add('hidden');
                     sendArrow.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
 
-                    // 에디토리얼 무드에 맞는 AI 로딩(작성 중) 요소 추가
+                    // 2. 에디토리얼 무드에 맞는 AI 로딩(작성 중) 요소 추가
                     var loadingRow = document.createElement('article');
-                    loadingRow.className = 'mb-14 animate-fade-in-up opacity-0';
-                    loadingRow.style.animationDelay = '0.1s';
+                    loadingRow.id = 'ai-loading';
+                    loadingRow.className = 'mb-10 animate-fade-in-up flex flex-col items-start';
                     loadingRow.innerHTML = 
-                        '<header class="mb-3 flex items-baseline gap-3">' +
-                            '<span class="font-serif font-bold text-lg text-accent">A.</span>' +
+                        '<header class="mb-2 flex items-baseline gap-2">' +
+                            '<span class="font-serif font-bold text-base text-accent">A.</span>' +
                         '</header>' +
-                        '<div class="px-5 py-4 border border-accent/15 rounded-2xl rounded-tr-sm bg-accent/5 font-sans text-[1.05rem] leading-[1.8] text-ink/50 italic flex gap-1 items-center">' +
+                        '<div class="w-full pt-1 font-sans text-base text-ink/50 italic flex gap-1 items-center">' +
                             '문장을 가다듬는 중' +
                             '<span class="flex gap-0.5 ml-1">' +
-                                '<span class="w-1 h-1 bg-ink/50 rounded-full animate-bounce" style="animation-delay: -0.32s"></span>' +
-                                '<span class="w-1 h-1 bg-ink/50 rounded-full animate-bounce" style="animation-delay: -0.16s"></span>' +
-                                '<span class="w-1 h-1 bg-ink/50 rounded-full animate-bounce"></span>' +
+                                '<span class="w-1 h-1 bg-ink/40 rounded-full animate-bounce" style="animation-delay: -0.32s"></span>' +
+                                '<span class="w-1 h-1 bg-ink/40 rounded-full animate-bounce" style="animation-delay: -0.16s"></span>' +
+                                '<span class="w-1 h-1 bg-ink/40 rounded-full animate-bounce"></span>' +
                             '</span>' +
                         '</div>';
                     
                     chatHistory.appendChild(loadingRow);
                     chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                    // 3. 서버로 전송 (Fetch API)
+                    var formData = new URLSearchParams();
+                    formData.append('message', message);
+                    formData.append('model', selectHidden.value);
+                    formData.append('roomId', document.querySelector('input[name="roomId"]').value);
+
+                    fetch(chatForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData.toString()
+                    })
+                    .then(function(response) {
+                        if (response.redirected) {
+                            window.location.href = response.url; // 새 방이 생성되어 리다이렉트 된 경우
+                            return null;
+                        }
+                        if (!response.ok) throw new Error('서버 통신 오류');
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (!data) return; // 리다이렉트 진행 중
+
+                        var loadingNode = document.getElementById('ai-loading');
+                        if (loadingNode) loadingNode.remove();
+
+                        // 날짜 포맷 (선택사항)
+                        var formattedTime = '방금 전';
+                        try {
+                            var d = new Date(data.timestamp.replace(/\[.*\]$/, ''));
+                            if(!isNaN(d.getTime())) {
+                                formattedTime = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                            }
+                        } catch(e) {}
+
+                        var aiParsedMessage = (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') 
+                            ? DOMPurify.sanitize(marked.parse(data.message)) 
+                            : escapeHtml(data.message);
+
+                        var aiRow = document.createElement('article');
+                        aiRow.className = 'mb-10 animate-fade-in-up chat-article flex flex-col items-start';
+                        aiRow.innerHTML = 
+                            '<header class="mb-2 flex items-baseline gap-x-2 gap-y-1">' +
+                                '<span class="font-serif font-bold text-base text-accent">A.</span>' +
+                                '<time class="font-sans text-xs text-meta/60 tabular-nums">' + formattedTime + '</time>' +
+                            '</header>' +
+                            '<div class="w-full pt-1 markdown-body text-ink/90">' +
+                                '<div class="parsed-content">' + aiParsedMessage + '</div>' +
+                            '</div>';
+                        
+                        chatHistory.appendChild(aiRow);
+                        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                        restoreInput();
+                    })
+                    .catch(function(error) {
+                        console.error('Error:', error);
+                        var loadingNode = document.getElementById('ai-loading');
+                        if (loadingNode) {
+                            loadingNode.querySelector('div').innerHTML = '<span class="text-accent not-italic">오류가 발생했습니다. 잠시 후 다시 시도해주세요.</span>';
+                        }
+                        restoreInput();
+                    });
                 });
+            }
+
+            function restoreInput() {
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                sendText.classList.remove('hidden');
+                sendArrow.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                messageInput.focus();
+            }
+
+            function escapeHtml(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
             }
         });
     </script>
