@@ -77,13 +77,23 @@
                     <a href="<c:url value='/chat'/>?roomId=${room.id}" class="flex-1 truncate text-sm ${isActive ? 'font-bold text-ink' : 'text-ink/70 hover:text-ink'} transition-colors">
                         ${room.title}
                     </a>
-                    <form action="<c:url value='/chat'/>" method="post" class="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ml-2 shrink-0">
-                        <input type="hidden" name="action" value="deleteRoom">
-                        <input type="hidden" name="roomId" value="${room.id}">
-                        <button type="submit" class="text-meta/40 hover:text-accent text-sm p-1 leading-none" title="삭제" onclick="return confirm('이 대화방을 정말 삭제할까요?');">
-                            ✕
+                    <div class="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ml-2 shrink-0 flex items-center">
+                        <form id="renameForm-${room.id}" action="<c:url value='/chat'/>" method="post" class="hidden">
+                            <input type="hidden" name="action" value="renameRoom">
+                            <input type="hidden" name="roomId" value="${room.id}">
+                            <input type="hidden" name="newTitle" id="newTitle-${room.id}" value="">
+                        </form>
+                        <button type="button" class="text-meta/40 hover:text-ink text-sm px-1.5 py-1 leading-none" title="이름 변경" onclick="renameRoom('${room.id}', this.closest('.group').querySelector('a').innerText.trim())">
+                            ✎
                         </button>
-                    </form>
+                        <form action="<c:url value='/chat'/>" method="post" class="inline-block">
+                            <input type="hidden" name="action" value="deleteRoom">
+                            <input type="hidden" name="roomId" value="${room.id}">
+                            <button type="submit" class="text-meta/40 hover:text-accent text-sm px-1.5 py-1 leading-none" title="삭제" onclick="return confirm('이 대화방을 정말 삭제할까요?');">
+                                ✕
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </c:forEach>
         </nav>
@@ -195,8 +205,96 @@
         </footer>
     </div>
 
-    <!-- 자바스크립트 로직 (이전의 타이핑 애니메이션을 에디토리얼 무드에 맞게 이식) -->
+    <!-- 이름 변경 모달 -->
+    <div id="renameModal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <!-- 배경 딤(Dim) -->
+        <div class="absolute inset-0 bg-ink/10 backdrop-blur-sm transition-opacity" onclick="closeRenameModal()"></div>
+        
+        <!-- 모달 창 -->
+        <div class="relative bg-paper border border-ink/10 shadow-lg p-8 w-full max-w-sm transform scale-95 transition-transform duration-300 mx-4" id="renameModalContent">
+            <h2 class="font-serif text-xl font-bold text-ink mb-6">대화의 주제를 다시 쓰기</h2>
+            
+            <div class="relative group border-b border-ink/20 pb-2 mb-8 transition-colors focus-within:border-accent">
+                <input
+                    type="text"
+                    id="renameModalInput"
+                    class="w-full bg-transparent border-none p-0 text-ink font-serif text-lg placeholder:text-meta/30 focus:ring-0"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+            
+            <div class="flex items-center justify-end gap-5 font-sans text-xs tracking-widest uppercase">
+                <button type="button" onclick="closeRenameModal()" class="text-meta/60 hover:text-ink transition-colors">
+                    취소
+                </button>
+                <button type="button" onclick="submitRename()" class="text-ink font-bold hover:text-accent transition-colors">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자바스크립트 로직 -->
     <script>
+        // 대화방 이름 변경 모달 로직
+        let currentRenameRoomId = null;
+
+        function renameRoom(roomId, currentTitle) {
+            currentRenameRoomId = roomId;
+            const modal = document.getElementById('renameModal');
+            const modalContent = document.getElementById('renameModalContent');
+            const input = document.getElementById('renameModalInput');
+            
+            input.value = currentTitle;
+            
+            // 모달 열기
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+            
+            // 포커스 이동
+            setTimeout(() => {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 100);
+            
+            // Enter 및 Esc 키 지원
+            input.onkeydown = function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitRename();
+                }
+                if (e.key === 'Escape') {
+                    closeRenameModal();
+                }
+            };
+        }
+
+        function closeRenameModal() {
+            const modal = document.getElementById('renameModal');
+            const modalContent = document.getElementById('renameModalContent');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            
+            currentRenameRoomId = null;
+        }
+
+        function submitRename() {
+            if (!currentRenameRoomId) return;
+            const input = document.getElementById('renameModalInput');
+            const newTitle = input.value.trim();
+            
+            if (newTitle !== '') {
+                document.getElementById('newTitle-' + currentRenameRoomId).value = newTitle;
+                document.getElementById('renameForm-' + currentRenameRoomId).submit();
+            } else {
+                closeRenameModal();
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             // 타임스탬프 포맷팅 (긴 서버 날짜를 "오후 5:09" 형태로 깔끔하게 변환)
             document.querySelectorAll('time').forEach(function(timeEl) {

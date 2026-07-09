@@ -73,4 +73,18 @@ public class SupabaseChatRoomRepository implements ChatRoomRepository {
             throw new RuntimeException("DB 삭제 중 에러 발생", e);
         }
     }
+
+    @Override
+    public void updateTitle(String id, String title) {
+        String sql = "UPDATE chat_rooms SET title = ? WHERE id = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, title);
+            pstmt.setString(2, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("DB 업데이트 중 에러 발생", e);
+        }
+    }
 }

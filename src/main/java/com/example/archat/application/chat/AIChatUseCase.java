@@ -74,6 +74,11 @@ public class AIChatUseCase implements ChatUseCase {
         chatRoomRepository.deleteById(roomId);
     }
 
+    @Override
+    public void renameRoom(String roomId, String title) {
+        chatRoomRepository.updateTitle(roomId, title);
+    }
+
     // 싱글톤 등록
     private AIChatUseCase() {
         this.chatRepository = SupabaseChatRepository.getInstance();

@@ -84,6 +84,14 @@ public class ChatController extends BaseController {
             }
             resp.sendRedirect("%s/%s".formatted(req.getContextPath(), "chat"));
             return;
+        } else if ("renameRoom".equals(action)) {
+            String roomId = req.getParameter("roomId");
+            String newTitle = req.getParameter("newTitle");
+            if (roomId != null && newTitle != null && !newTitle.trim().isEmpty()) {
+                chatUseCase.renameRoom(roomId, newTitle.trim());
+            }
+            resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", roomId));
+            return;
         }
 
         String roomId = req.getParameter("roomId");

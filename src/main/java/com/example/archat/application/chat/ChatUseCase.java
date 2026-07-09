@@ -10,6 +10,7 @@ public interface ChatUseCase {
     ChatRoom createRoom(String userId, String title);
     List<ChatRoom> findAllRooms(String userId);
     void deleteRoom(String roomId);
+    void renameRoom(String roomId, String title);
 
     // presentation 용
     // -> 내부 로직을 보여줄 필요가 X
