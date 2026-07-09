@@ -38,20 +38,20 @@ public class GenAIChatProvider implements ChatProvider {
                 continue; // 이전에 저장된 빈 답변(오류)을 무시하여 '빈 답변 루프' 방지
             }
             String role = c.owner().equalsIgnoreCase("user") ? "user" : "model";
-            String textWithTime = c.message() + " [발송 시간: " + c.timestamp() + "]\n";
+            String messageText = c.message() + "\n";
 
             if (currentRole == null) {
                 currentRole = role;
-                currentText.append(textWithTime);
+                currentText.append(messageText);
             } else if (currentRole.equals(role)) {
-                currentText.append(textWithTime); // 같은 역할이 연속되면 하나의 메시지로 병합 (API 오류 방지)
+                currentText.append(messageText); // 같은 역할이 연속되면 하나의 메시지로 병합 (API 오류 방지)
             } else {
                 contents.add(Content.builder()
                         .role(currentRole)
                         .parts(Part.builder().text(currentText.toString().trim()).build())
                         .build());
                 currentRole = role;
-                currentText = new StringBuilder(textWithTime);
+                currentText = new StringBuilder(messageText);
             }
         }
         if (currentRole != null) {

@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>대화의 기록</title>
-    
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="${pageContext.request.contextPath}/images/favicon.png">
     <!-- 웹 폰트 (Pretendard & Noto Serif KR) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,6 +33,7 @@
                     fontFamily: {
                         sans: ['Pretendard', 'sans-serif'],
                         serif: ['"Noto Serif KR"', 'serif'],
+                        handwriting: ['"KyoboHandwriting2021Seongjiyoung"', 'cursive'],
                     },
                     keyframes: {
                         fadeInUp: {
@@ -48,6 +50,13 @@
     </script>
     
     <style>
+        @font-face {
+            font-family: 'KyoboHandwriting2021Seongjiyoung';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KyoboHandwriting2021sjy.woff2') format('woff2');
+            font-weight: normal;
+            font-display: swap;
+        }
+
         body { background-color: #FAF9F4; }
         
         /* 스크롤바마저도 숨기거나 극도로 얇게 처리하여 문서 느낌 강조 */
@@ -167,7 +176,7 @@
 <body class="bg-paper text-ink font-sans antialiased min-h-screen flex selection:bg-accent selection:text-white">
 
     <!-- 사이드바 -->
-    <aside class="w-64 border-r border-ink/5 bg-paper flex flex-col pt-8 pb-6 h-screen sticky top-0 hidden md:flex shrink-0">
+    <aside class="w-64 border-r border-ink/5 bg-paper flex flex-col pt-8 pb-6 h-screen sticky top-0 hidden md:flex shrink-0 font-handwriting">
         <!-- 새 방 만들기 버튼 -->
         <div class="px-6 mb-8">
             <form action="<c:url value='/chat'/>" method="post">
@@ -209,9 +218,9 @@
         
         <!-- 하단: 유저 정보 및 로그아웃 -->
         <div class="mt-auto px-6 pt-6 border-t border-ink/5">
-            <div class="text-xs text-meta/70 truncate mb-3">${currentUserEmail}</div>
+            <div class="text-base text-meta/70 truncate mb-3">${currentUserEmail}</div>
             <form action="<c:url value='/logout'/>" method="post">
-                <button type="submit" class="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent hover:text-ink transition-colors">로그아웃</button>
+                <button type="submit" class="text-[0.9rem] uppercase tracking-[0.1em] text-accent hover:text-ink transition-colors">로그아웃</button>
             </form>
         </div>
     </aside>
@@ -334,7 +343,7 @@
         
         <!-- 모달 창 -->
         <div class="relative bg-paper border border-ink/10 shadow-lg p-8 w-full max-w-sm transform scale-95 transition-transform duration-300 mx-4" id="renameModalContent">
-            <h2 class="font-serif text-xl font-bold text-ink mb-6">대화의 주제를 다시 쓰기</h2>
+            <h2 class="font-serif text-xl font-bold text-ink mb-6">대화방 이름 수정</h2>
             
             <div class="relative group border-b border-ink/20 pb-2 mb-8 transition-colors focus-within:border-accent">
                 <input

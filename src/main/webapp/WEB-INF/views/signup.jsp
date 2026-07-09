@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입</title>
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="${pageContext.request.contextPath}/images/favicon.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
@@ -79,10 +82,14 @@
                             name="password"
                             type="password"
                             required
+                            minlength="8"
+                            pattern="(?=.*\d)(?=.*[a-zA-Z]).{8,}"
+                            title="최소 8자 이상이며, 영문과 숫자를 최소 1개 이상 포함해야 합니다."
                             autocomplete="new-password"
                             placeholder="••••••••"
                             class="w-full bg-transparent border-none p-0 text-ink font-serif text-lg placeholder:text-meta/30 placeholder:italic focus:ring-0 tracking-[0.2em]"
                     />
+                    <p class="absolute -bottom-5 left-0 text-[0.6rem] text-meta/60">영문, 숫자 포함 8자 이상</p>
                 </div>
 
                 <!-- 블록 형태 버튼 -->
