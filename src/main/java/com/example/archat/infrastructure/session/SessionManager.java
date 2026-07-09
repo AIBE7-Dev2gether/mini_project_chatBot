@@ -1,6 +1,6 @@
 package com.example.archat.infrastructure.session;
 
-import com.example.archat.domain.model.AuthUser;
+import com.example.archat.domain.auth.AuthUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
