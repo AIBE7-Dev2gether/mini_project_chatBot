@@ -1,4 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
+<!-- Open Graph Meta Tags -->
+<meta property="og:title" content="필담">
+<meta property="og:description" content="생각을 정리하고 싶은 날, 연필을 쥐고 백지 위를 당신의 질문으로 채워보세요.">
+<meta property="og:image" content="${pageContext.request.contextPath}/images/og-image.jpg">
+<meta property="og:type" content="website">
+
 <!-- favicon -->
 <link rel="icon" type="image/png" href="${pageContext.request.contextPath}/images/favicon.png">
 
