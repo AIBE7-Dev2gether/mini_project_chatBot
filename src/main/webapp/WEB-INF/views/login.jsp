@@ -5,45 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인</title>
-    <!-- favicon -->
-    <link rel="icon" type="image/png" href="${pageContext.request.contextPath}/images/favicon.png">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        paper: '#FAF9F4',
-                        ink: '#2A2A2A',
-                        meta: '#888888',
-                        accent: '#9A3B3B',
-                    },
-                    fontFamily: {
-                        sans: ['Pretendard', 'sans-serif'],
-                        serif: ['"Noto Serif KR"', 'serif'],
-                    },
-                    keyframes: {
-                        fadeInUp: {
-                            '0%': { opacity: '0', transform: 'translateY(15px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    },
-                    animation: {
-                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #FAF9F4; }
-        *:focus { outline: none; }
-    </style>
+    <jsp:include page="/WEB-INF/views/includes/head.jsp" />
 </head>
 <body class="min-h-screen bg-paper text-ink font-sans antialiased flex flex-col items-center justify-center selection:bg-accent selection:text-white">
     <div class="w-full max-w-sm mx-auto px-6 -mt-10">

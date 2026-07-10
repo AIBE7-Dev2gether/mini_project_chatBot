@@ -1,0 +1,18 @@
+@charset "UTF-8";
+
+@font-face {
+    font-family: 'KyoboHandwriting2021Seongjiyoung';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KyoboHandwriting2021sjy.woff2') format('woff2');
+    font-weight: normal;
+    font-display: swap;
+}
+
+body { background-color: #FAF9F4; }
+
+/* 스크롤바마저도 숨기거나 극도로 얇게 처리하여 문서 느낌 강조 */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E0DDD0; }
+
+/* 포커스시 기본 아웃라인 제거 (Tailwind border로 대체) */
+*:focus { outline: none; }

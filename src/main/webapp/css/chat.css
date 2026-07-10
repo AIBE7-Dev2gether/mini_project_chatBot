@@ -1,0 +1,106 @@
+@charset "UTF-8";
+
+/* 에디토리얼 마크다운 스타일 */
+.markdown-body {
+    font-family: 'Pretendard', sans-serif;
+    line-height: 1.8;
+    color: rgba(42, 42, 42, 0.9);
+    word-break: break-word;
+}
+.markdown-body p { margin-bottom: 1em; }
+.markdown-body p:last-child { margin-bottom: 0; }
+.markdown-body strong { font-weight: 700; color: #2A2A2A; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    color: #2A2A2A;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+.markdown-body h1 { font-size: 1.4em; }
+.markdown-body h2 { font-size: 1.25em; }
+.markdown-body h3 { font-size: 1.1em; }
+.markdown-body ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1em; }
+.markdown-body ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 1em; }
+.markdown-body li { margin-bottom: 0.3em; }
+.markdown-body blockquote {
+    border-left: 3px solid #9A3B3B;
+    padding-left: 1em;
+    margin: 1em 0;
+    color: #888888;
+    font-style: italic;
+}
+.markdown-body code {
+    background-color: rgba(42, 42, 42, 0.05);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #9A3B3B;
+}
+.markdown-body pre {
+    background-color: #2A2A2A;
+    color: #FAF9F4;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+.markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+/* 사용자 말풍선 마크다운 스타일 (어두운 먹색 배경용) */
+.markdown-body-user {
+    font-family: 'Pretendard', sans-serif;
+    line-height: 1.6;
+    color: #FAF9F4;
+    word-break: break-word;
+}
+.markdown-body-user p { margin-bottom: 0.8em; }
+.markdown-body-user p:last-child { margin-bottom: 0; }
+.markdown-body-user strong { font-weight: 700; color: #FFFFFF; }
+.markdown-body-user h1, .markdown-body-user h2, .markdown-body-user h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+}
+.markdown-body-user h1 { font-size: 1.3em; }
+.markdown-body-user h2 { font-size: 1.15em; }
+.markdown-body-user h3 { font-size: 1.05em; }
+.markdown-body-user ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 0.8em; }
+.markdown-body-user ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 0.8em; }
+.markdown-body-user li { margin-bottom: 0.2em; }
+.markdown-body-user blockquote {
+    border-left: 3px solid rgba(250, 249, 244, 0.4);
+    padding-left: 1em;
+    margin: 0.8em 0;
+    color: rgba(250, 249, 244, 0.7);
+    font-style: italic;
+}
+.markdown-body-user code {
+    background-color: rgba(250, 249, 244, 0.15);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #FFFFFF;
+}
+.markdown-body-user pre {
+    background-color: #1A1A1A;
+    color: #FAF9F4;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+    border: 1px solid rgba(250,249,244,0.1);
+}
+.markdown-body-user pre code {
+    background-color: transparent;
+    padding: 0;
+    border: none;
+}
