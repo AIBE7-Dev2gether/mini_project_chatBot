@@ -1,4 +1,4 @@
-# Just Write
+# 필담
 
 Java Servlet/JSP 기반의 AI 채팅 웹 애플리케이션입니다. 사용자는 Supabase Auth로 로그인/회원가입하고, 채팅 메시지와 대화방 목록은 Supabase PostgreSQL에 저장됩니다. AI 응답은 선택한 모델명에 따라 Gemini, Groq, NVIDIA NIM Provider 중 하나를 통해 생성됩니다. 클라이언트는 최신 Fetch API와 마크다운 렌더링, Optimistic UI를 적용하여 새로고침 없는 부드러운 사용자 경험을 제공합니다.
 
