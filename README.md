@@ -192,10 +192,11 @@ JDBC                → Spring Data JPA
 기존 WAR            → Spring Boot executable WAR
 ```
 
-Supabase Auth는 유지합니다. 기존 계정 9건, 대화방 4건, 메시지 28건을 이관했으며 원본/대상의 내용, UTC 시간과 외래키 무결성을 검증했습니다.
+Supabase Auth는 유지합니다. 기존 계정 9건, 대화방 4건, 메시지 28건을 이관했으며 원본/대상의 내용, UTC 시간과 외래키 무결성을 검증했습니다. 세부 설계와 수행 과정은 [마이그레이션 수행 기록](docs/archive/SPRING_BOOT_JPA_AIVEN_MYSQL_MIGRATION.md)에 정리되어 있습니다.
 
 ## 관련 문서
 
 - [데이터 흐름 및 아키텍처](docs/DATA_FLOW.md)
 - [Aiven MySQL 스키마](docs/DATABASE_SCHEMA.md)
 - [Render/Aiven 배포 및 운영](docs/DEPLOYMENT_AND_OPERATIONS.md)
+- [Spring Boot/JPA/Aiven 마이그레이션 수행 기록](docs/archive/SPRING_BOOT_JPA_AIVEN_MYSQL_MIGRATION.md)
