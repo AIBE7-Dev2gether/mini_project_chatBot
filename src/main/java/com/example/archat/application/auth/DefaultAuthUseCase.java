@@ -2,23 +2,17 @@ package com.example.archat.application.auth;
 
 import com.example.archat.domain.auth.AuthUser;
 import com.example.archat.domain.auth.AccountRepository;
-import com.example.archat.infrastructure.auth.SupabaseAuthClient;
-import com.example.archat.infrastructure.auth.SupabaseAccountRepository;
+import org.springframework.stereotype.Service;
 
+@Service
 public class DefaultAuthUseCase implements AuthUseCase {
 
     private final AuthProvider authProvider;
     private final AccountRepository accountRepository;
 
-    private DefaultAuthUseCase() {
-        this.authProvider = SupabaseAuthClient.getInstance();
-        this.accountRepository = SupabaseAccountRepository.getInstance();
-    }
-
-    private static final DefaultAuthUseCase instance = new DefaultAuthUseCase();
-
-    public static DefaultAuthUseCase getInstance() {
-        return instance;
+    public DefaultAuthUseCase(AuthProvider authProvider, AccountRepository accountRepository) {
+        this.authProvider = authProvider;
+        this.accountRepository = accountRepository;
     }
 
     @Override

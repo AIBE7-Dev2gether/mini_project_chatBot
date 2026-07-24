@@ -40,6 +40,10 @@ build/
 
 ### env ###
 .env
+*.jks
+*.p12
+*.pem
+ca.pem
 
 ### local tomcat ###
 apache-tomcat-*/

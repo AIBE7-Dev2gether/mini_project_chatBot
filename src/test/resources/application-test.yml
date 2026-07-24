@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:archat;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  supabase:
+    url: ""
+    anon-key: ""
+    service-role-key: ""
+  ai:
+    gemini-api-key: ""
+    groq-api-key: ""
+    nim-api-key: ""

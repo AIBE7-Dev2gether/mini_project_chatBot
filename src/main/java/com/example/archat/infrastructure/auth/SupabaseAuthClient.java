@@ -3,9 +3,10 @@ package com.example.archat.infrastructure.auth;
 import com.example.archat.application.auth.AuthException;
 import com.example.archat.application.auth.AuthProvider;
 import com.example.archat.domain.auth.AuthUser;
+import com.example.archat.infrastructure.config.SupabaseProperties;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,25 +14,19 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SupabaseAuthClient implements AuthProvider {
 
-    private static final String SUPABASE_URL = System.getenv("SUPABASE_URL");
-    private static final String SUPABASE_ANON_KEY = System.getenv("SUPABASE_ANON_KEY");
-    private static final String SUPABASE_SERVICE_ROLE_KEY = System.getenv("SUPABASE_SERVICE_ROLE_KEY");
-
+    private final SupabaseProperties properties;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    private SupabaseAuthClient() {
+    public SupabaseAuthClient(SupabaseProperties properties, ObjectMapper objectMapper) {
+        this.properties = properties;
         this.httpClient = HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper();
-    }
-
-    private static final SupabaseAuthClient instance = new SupabaseAuthClient();
-
-    public static SupabaseAuthClient getInstance() {
-        return instance;
+        this.objectMapper = objectMapper;
     }
 
     public AuthUser login(String email, String password) {
@@ -41,10 +36,10 @@ public class SupabaseAuthClient implements AuthProvider {
             String requestBody = objectMapper.writeValueAsString(new LoginRequest(email, password));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("%s/auth/v1/token?grant_type=password".formatted(SUPABASE_URL)))
+                    .uri(URI.create("%s/auth/v1/token?grant_type=password".formatted(properties.url())))
                     .header("Content-Type", "application/json")
-                    .header("apikey", SUPABASE_ANON_KEY)
-                    .header("Authorization", "Bearer " + SUPABASE_ANON_KEY)
+                    .header("apikey", properties.anonKey())
+                    .header("Authorization", "Bearer " + properties.anonKey())
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
                     .build();
 
@@ -69,10 +64,10 @@ public class SupabaseAuthClient implements AuthProvider {
             String requestBody = objectMapper.writeValueAsString(new SignupRequest(email, password, true));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("%s/auth/v1/admin/users".formatted(SUPABASE_URL)))
+                    .uri(URI.create("%s/auth/v1/admin/users".formatted(properties.url())))
                     .header("Content-Type", "application/json")
-                    .header("apikey", SUPABASE_SERVICE_ROLE_KEY)
-                    .header("Authorization", "Bearer " + SUPABASE_SERVICE_ROLE_KEY)
+                    .header("apikey", properties.serviceRoleKey())
+                    .header("Authorization", "Bearer " + properties.serviceRoleKey())
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
                     .build();
 
@@ -91,15 +86,19 @@ public class SupabaseAuthClient implements AuthProvider {
     }
 
     private void validateLoginEnvironment() {
-        if (SUPABASE_URL == null || SUPABASE_URL.isBlank() || SUPABASE_ANON_KEY == null || SUPABASE_ANON_KEY.isBlank()) {
+        if (isBlank(properties.url()) || isBlank(properties.anonKey())) {
             throw new AuthException(500, "auth_config_missing", "SUPABASE_URL 또는 SUPABASE_ANON_KEY 환경 변수가 설정되지 않았습니다.");
         }
     }
 
     private void validateSignupEnvironment() {
-        if (SUPABASE_URL == null || SUPABASE_URL.isBlank() || SUPABASE_SERVICE_ROLE_KEY == null || SUPABASE_SERVICE_ROLE_KEY.isBlank()) {
+        if (isBlank(properties.url()) || isBlank(properties.serviceRoleKey())) {
             throw new AuthException(500, "auth_config_missing", "SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY 환경 변수가 설정되지 않았습니다.");
         }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private HttpResponse<String> send(HttpRequest request) {

@@ -2,10 +2,10 @@ package com.example.archat.infrastructure.chat;
 
 import com.example.archat.application.chat.ChatProvider;
 import com.example.archat.domain.chat.Chat;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,19 +15,26 @@ import java.util.List;
 
 public class OpenAICompatibleProvider implements ChatProvider {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final HttpClient HTTP = HttpClient.newHttpClient();
-
     private final String endpoint;
     private final String apiKey;
     private final String systemInstruction;
     private final int maxTokens;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
 
-    public OpenAICompatibleProvider(String endpoint, String apiKey, String systemInstruction, int maxTokens) {
+    public OpenAICompatibleProvider(
+            String endpoint,
+            String apiKey,
+            String systemInstruction,
+            int maxTokens,
+            ObjectMapper objectMapper
+    ) {
         this.endpoint = endpoint;
         this.apiKey = apiKey;
         this.systemInstruction = systemInstruction;
         this.maxTokens = maxTokens;
+        this.objectMapper = objectMapper;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     @Override
@@ -42,13 +49,13 @@ public class OpenAICompatibleProvider implements ChatProvider {
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
             if (res.statusCode() != 200) {
                 return "문제가 생겼어요 : API " + res.statusCode() + " - " + res.body();
             }
 
-            JsonNode root = MAPPER.readTree(res.body());
+            JsonNode root = objectMapper.readTree(res.body());
             return root.path("choices").get(0).path("message").path("content").asText();
 
         } catch (Exception e) {
@@ -58,7 +65,7 @@ public class OpenAICompatibleProvider implements ChatProvider {
     }
 
     private String buildBody(Chat newChat, List<Chat> history) throws Exception {
-        ObjectNode payload = MAPPER.createObjectNode();
+        ObjectNode payload = objectMapper.createObjectNode();
         payload.put("model", newChat.model());
         payload.put("max_tokens", maxTokens);
 
@@ -75,6 +82,6 @@ public class OpenAICompatibleProvider implements ChatProvider {
                     .put("content", c.message());
         }
 
-        return MAPPER.writeValueAsString(payload);
+        return objectMapper.writeValueAsString(payload);
     }
 }

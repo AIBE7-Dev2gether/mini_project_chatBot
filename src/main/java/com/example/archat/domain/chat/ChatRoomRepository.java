@@ -5,6 +5,7 @@ import java.util.List;
 public interface ChatRoomRepository {
     void save(ChatRoom chatRoom);
     List<ChatRoom> findAllByUserId(String userId);
-    void deleteById(String id);
-    void updateTitle(String id, String title);
+    boolean existsByIdAndUserId(String id, String userId);
+    void deleteByIdAndUserId(String id, String userId);
+    void updateTitle(String id, String userId, String title);
 }

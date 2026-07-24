@@ -1,21 +1,18 @@
 package com.example.archat.application.chat;
 
 import com.example.archat.domain.chat.Chat;
+import com.example.archat.domain.chat.ChatRepository;
 import com.example.archat.domain.chat.ChatRoom;
 import com.example.archat.domain.chat.ChatRoomRepository;
-import com.example.archat.domain.chat.ChatRepository;
-import com.example.archat.application.chat.ChatProvider;
-import com.example.archat.infrastructure.chat.GenAIChatProvider;
-import com.example.archat.infrastructure.chat.GroqConfig;
-import com.example.archat.infrastructure.chat.NimConfig;
-import com.example.archat.infrastructure.chat.OpenAICompatibleProvider;
-import com.example.archat.infrastructure.chat.SupabaseChatRepository;
-import com.example.archat.infrastructure.chat.SupabaseChatRoomRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class AIChatUseCase implements ChatUseCase {
 
     private final ChatRepository chatRepository;
@@ -24,21 +21,27 @@ public class AIChatUseCase implements ChatUseCase {
     private final ChatProvider genAIChatProvider;
     private final ChatProvider nimChatProvider;
 
+    public AIChatUseCase(
+            ChatRepository chatRepository,
+            ChatRoomRepository chatRoomRepository,
+            @Qualifier("groqChatProvider") ChatProvider groqChatProvider,
+            @Qualifier("genAIChatProvider") ChatProvider genAIChatProvider,
+            @Qualifier("nimChatProvider") ChatProvider nimChatProvider
+    ) {
+        this.chatRepository = chatRepository;
+        this.chatRoomRepository = chatRoomRepository;
+        this.groqChatProvider = groqChatProvider;
+        this.genAIChatProvider = genAIChatProvider;
+        this.nimChatProvider = nimChatProvider;
+    }
 
     @Override
     public Chat save(Chat chat) {
+        requireOwnedRoom(chat.roomId(), chat.userId());
         chatRepository.save(chat);
         List<Chat> history = chatRepository.findAllByRoomId(chat.roomId());
 
-        String aiResponse = null;
-        if (chat.model().contains("gemini") || chat.model().contains("gemma")) {
-            aiResponse = genAIChatProvider.useAI(chat, history);
-        }  else if (chat.model().contains("nvidia") || chat.model().contains("nemotron") || chat.model().startsWith("meta/")) {
-            aiResponse = nimChatProvider.useAI(chat, history);
-        } else {
-            aiResponse = groqChatProvider.useAI(chat, history);
-        }
-
+        String aiResponse = selectProvider(chat.model()).useAI(chat, history);
         Chat aiChat = new Chat(
                 aiResponse,
                 "AI",
@@ -51,15 +54,20 @@ public class AIChatUseCase implements ChatUseCase {
         return aiChat;
     }
 
-
     @Override
-    public List<Chat> findAllByRoomId(String roomId) {
+    public List<Chat> findAllByRoomId(String userId, String roomId) {
+        requireOwnedRoom(roomId, userId);
         return chatRepository.findAllByRoomId(roomId);
     }
 
     @Override
     public ChatRoom createRoom(String userId, String title) {
-        ChatRoom room = new ChatRoom(UUID.randomUUID().toString(), userId, title, ZonedDateTime.now().toString());
+        ChatRoom room = new ChatRoom(
+                UUID.randomUUID().toString(),
+                userId,
+                title,
+                ZonedDateTime.now().toString()
+        );
         chatRoomRepository.save(room);
         return room;
     }
@@ -70,33 +78,35 @@ public class AIChatUseCase implements ChatUseCase {
     }
 
     @Override
-    public void deleteRoom(String roomId) {
+    @Transactional
+    public void deleteRoom(String userId, String roomId) {
+        requireOwnedRoom(roomId, userId);
         chatRepository.deleteByRoomId(roomId);
-        chatRoomRepository.deleteById(roomId);
+        chatRoomRepository.deleteByIdAndUserId(roomId, userId);
     }
 
     @Override
-    public void renameRoom(String roomId, String title) {
-        chatRoomRepository.updateTitle(roomId, title);
+    @Transactional
+    public void renameRoom(String userId, String roomId, String title) {
+        chatRoomRepository.updateTitle(roomId, userId, title);
     }
 
-    // 싱글톤 등록
-    private AIChatUseCase() {
-        this.chatRepository = SupabaseChatRepository.getInstance();
-        this.chatRoomRepository = SupabaseChatRoomRepository.getInstance();
-        this.genAIChatProvider = GenAIChatProvider.getInstance();
-        this.groqChatProvider = new OpenAICompatibleProvider(
-                GroqConfig.ENDPOINT, GroqConfig.GROQ_API_KEY, GroqConfig.SYSTEM_INSTRUCTION, GroqConfig.MAX_TOKENS
-        );
-        this.nimChatProvider = new OpenAICompatibleProvider(
-                NimConfig.ENDPOINT, NimConfig.NIM_API_KEY, NimConfig.SYSTEM_INSTRUCTION, NimConfig.MAX_TOKENS
-        );
+    private ChatProvider selectProvider(String model) {
+        if (model == null || model.isBlank()) {
+            throw new IllegalArgumentException("AI 모델을 선택해 주세요.");
+        }
+        if (model.contains("gemini") || model.contains("gemma")) {
+            return genAIChatProvider;
+        }
+        if (model.contains("nvidia") || model.contains("nemotron") || model.startsWith("meta/")) {
+            return nimChatProvider;
+        }
+        return groqChatProvider;
     }
 
-    private static final AIChatUseCase instance = new AIChatUseCase();
-
-    public static AIChatUseCase getInstance() {
-        return instance;
+    private void requireOwnedRoom(String roomId, String userId) {
+        if (!chatRoomRepository.existsByIdAndUserId(roomId, userId)) {
+            throw new IllegalArgumentException("접근할 수 없는 대화방입니다.");
+        }
     }
-
 }

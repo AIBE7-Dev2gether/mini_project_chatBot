@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: archat
+  datasource:
+    url: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT}/${AIVEN_MYSQL_DATABASE}?sslMode=${AIVEN_MYSQL_SSL_MODE:REQUIRED}&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${AIVEN_MYSQL_USER}
+    password: ${AIVEN_MYSQL_PASSWORD}
+  flyway:
+    enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  mvc:
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+  web:
+    resources:
+      static-locations: /,classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
+
+server:
+  port: ${PORT:10000}
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    session:
+      timeout: ${SESSION_TIMEOUT_MINUTES:30}m
+      cookie:
+        http-only: true
+        secure: ${APP_COOKIE_SECURE:false}
+        same-site: lax
+
+app:
+  supabase:
+    url: ${SUPABASE_URL:}
+    anon-key: ${SUPABASE_ANON_KEY:}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+  ai:
+    gemini-api-key: ${GEMINI_API_KEY:}
+    groq-api-key: ${GROQ_API_KEY:}
+    nim-api-key: ${NIM_API_KEY:}

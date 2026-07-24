@@ -9,8 +9,8 @@ public interface ChatUseCase {
     // application.service -> impl
     ChatRoom createRoom(String userId, String title);
     List<ChatRoom> findAllRooms(String userId);
-    void deleteRoom(String roomId);
-    void renameRoom(String roomId, String title);
+    void deleteRoom(String userId, String roomId);
+    void renameRoom(String userId, String roomId, String title);
 
     // presentation 용
     // -> 내부 로직을 보여줄 필요가 X
@@ -18,7 +18,7 @@ public interface ChatUseCase {
 
     // sessionId -> userId
     // 전체 데이터를 불러오기
-    List<Chat> findAllByRoomId(String roomId);
+    List<Chat> findAllByRoomId(String userId, String roomId);
 
     Chat save(Chat chat);
 }

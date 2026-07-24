@@ -1,131 +1,139 @@
 package com.example.archat.presentation.chat;
 
-import com.example.archat.application.chat.AIChatUseCase;
 import com.example.archat.application.chat.ChatUseCase;
 import com.example.archat.domain.auth.AuthUser;
 import com.example.archat.domain.chat.Chat;
-import com.example.archat.presentation.common.BaseController;
 import com.example.archat.infrastructure.session.SessionManager;
-import com.example.archat.presentation.chat.ChatResponseDTO;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
+import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-@WebServlet("/chat")
-public class ChatController extends BaseController {
-    private final ChatUseCase chatUseCase = AIChatUseCase.getInstance();
-    private final SessionManager sessionManager = new SessionManager();
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.FOUND;
 
-    @Override
-    public void init() throws ServletException {
+@Controller
+public class ChatController {
+
+    private final ChatUseCase chatUseCase;
+    private final SessionManager sessionManager;
+
+    public ChatController(ChatUseCase chatUseCase, SessionManager sessionManager) {
+        this.chatUseCase = chatUseCase;
+        this.sessionManager = sessionManager;
     }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        AuthUser authUser = sessionManager.getAuthUser(req);
-        if (authUser == null) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
+    @GetMapping("/")
+    public String home() {
+        return "redirect:/chat";
+    }
 
-        var rooms = chatUseCase.findAllRooms(authUser.userId())
+    @GetMapping("/chat")
+    public String chat(
+            @RequestParam(required = false) String roomId,
+            HttpServletRequest request,
+            Model model
+    ) {
+        AuthUser authUser = sessionManager.getAuthUser(request);
+        List<ChatRoomResponseDTO> rooms = chatUseCase.findAllRooms(authUser.userId())
                 .stream()
                 .map(ChatRoomResponseDTO::of)
                 .toList();
-        req.setAttribute("rooms", rooms);
 
-        String roomId = req.getParameter("roomId");
         if (roomId == null && !rooms.isEmpty()) {
-            roomId = rooms.get(0).getId();
+            roomId = rooms.get(0).id();
+        }
+        String selectedRoomId = roomId;
+        if (selectedRoomId != null && rooms.stream().noneMatch(room -> room.id().equals(selectedRoomId))) {
+            throw new ResponseStatusException(NOT_FOUND, "대화방을 찾을 수 없습니다.");
         }
 
-        req.setAttribute("currentRoomId", roomId);
+        model.addAttribute("rooms", rooms);
+        model.addAttribute("currentRoomId", selectedRoomId);
+        model.addAttribute("currentUserEmail", authUser.email());
 
-        if (roomId != null) {
-            List<ChatResponseDTO> response = chatUseCase.findAllByRoomId(roomId)
+        if (selectedRoomId != null) {
+            List<ChatResponseDTO> chats = chatUseCase.findAllByRoomId(authUser.userId(), selectedRoomId)
                     .stream()
                     .map(ChatResponseDTO::of)
                     .toList();
-            req.setAttribute("chats", response);
+            model.addAttribute("chats", chats);
         }
-
-        req.setAttribute("currentUserEmail", authUser.email());
-
-        req.getRequestDispatcher("%s/%s".formatted(VIEW_PREFIX, "chat.jsp"))
-                .forward(req, resp);
+        return "chat";
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        AuthUser authUser = sessionManager.getAuthUser(req);
-        if (authUser == null) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
+    @PostMapping(value = "/chat", params = "action=createRoom")
+    public String createRoom(
+            @RequestParam(required = false) String title,
+            HttpServletRequest request
+    ) {
+        AuthUser authUser = sessionManager.getAuthUser(request);
+        String roomTitle = title == null || title.isBlank() ? "새 대화방" : title.trim();
+        var room = chatUseCase.createRoom(authUser.userId(), roomTitle);
+        return "redirect:/chat?roomId=" + room.id();
+    }
+
+    @PostMapping(value = "/chat", params = "action=deleteRoom")
+    public String deleteRoom(@RequestParam String roomId, HttpServletRequest request) {
+        AuthUser authUser = sessionManager.getAuthUser(request);
+        chatUseCase.deleteRoom(authUser.userId(), roomId);
+        return "redirect:/chat";
+    }
+
+    @PostMapping(value = "/chat", params = "action=renameRoom")
+    public String renameRoom(
+            @RequestParam String roomId,
+            @RequestParam String newTitle,
+            HttpServletRequest request
+    ) {
+        AuthUser authUser = sessionManager.getAuthUser(request);
+        if (!newTitle.isBlank()) {
+            chatUseCase.renameRoom(authUser.userId(), roomId, newTitle.trim());
+        }
+        return "redirect:/chat?roomId=" + roomId;
+    }
+
+    @PostMapping(value = "/chat", params = "!action")
+    public ResponseEntity<?> sendMessage(
+            @RequestParam(required = false) String roomId,
+            @RequestParam String message,
+            @RequestParam String model,
+            @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
+            @RequestHeader(value = "Accept", required = false) String accept,
+            HttpServletRequest request
+    ) {
+        AuthUser authUser = sessionManager.getAuthUser(request);
+        boolean newRoom = roomId == null || roomId.isBlank();
+        if (newRoom) {
+            roomId = chatUseCase.createRoom(authUser.userId(), "새 대화방").id();
         }
 
-        String action = req.getParameter("action");
-        if ("createRoom".equals(action)) {
-            String title = req.getParameter("title");
-            if (title == null || title.trim().isEmpty()) {
-                title = "새 대화방";
-            }
-            var room = chatUseCase.createRoom(authUser.userId(), title);
-            resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", room.id()));
-            return;
-        } else if ("deleteRoom".equals(action)) {
-            String roomId = req.getParameter("roomId");
-            if (roomId != null && !roomId.isEmpty()) {
-                chatUseCase.deleteRoom(roomId);
-            }
-            resp.sendRedirect("%s/%s".formatted(req.getContextPath(), "chat"));
-            return;
-        } else if ("renameRoom".equals(action)) {
-            String roomId = req.getParameter("roomId");
-            String newTitle = req.getParameter("newTitle");
-            if (roomId != null && newTitle != null && !newTitle.trim().isEmpty()) {
-                chatUseCase.renameRoom(roomId, newTitle.trim());
-            }
-            resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", roomId));
-            return;
-        }
-
-        String submittedRoomId = req.getParameter("roomId");
-        String roomId = submittedRoomId;
-        boolean isNewRoom = false;
-
-        if (roomId == null || roomId.trim().isEmpty()) {
-            var room = chatUseCase.createRoom(authUser.userId(), "새 대화방");
-            roomId = room.id();
-            isNewRoom = true;
-        }
-
-        Chat chat = new Chat(
-                req.getParameter("message"),
+        Chat userChat = new Chat(
+                message,
                 "USER",
                 authUser.userId(),
                 roomId,
-                req.getParameter("model"),
+                model,
                 ZonedDateTime.now().toString()
         );
-        Chat aiChat = chatUseCase.save(chat);
+        Chat aiChat = chatUseCase.save(userChat);
 
-        String isAjax = req.getHeader("X-Requested-With");
-        String accept = req.getHeader("Accept");
-
-        if (!isNewRoom && ("XMLHttpRequest".equals(isAjax) || (accept != null && accept.contains("application/json")))) {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            ChatResponseDTO aiDto = ChatResponseDTO.of(aiChat);
-            mapper.writeValue(resp.getWriter(), aiDto);
-            return;
+        boolean ajax = "XMLHttpRequest".equals(requestedWith)
+                || (accept != null && accept.contains("application/json"));
+        if (!newRoom && ajax) {
+            return ResponseEntity.ok(ChatResponseDTO.of(aiChat));
         }
-
-        resp.sendRedirect("%s/%s?roomId=%s".formatted(req.getContextPath(), "chat", roomId));
+        return ResponseEntity.status(FOUND)
+                .location(URI.create(request.getContextPath() + "/chat?roomId=" + roomId))
+                .build();
     }
 }

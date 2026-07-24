@@ -3,7 +3,9 @@ package com.example.archat.infrastructure.session;
 import com.example.archat.domain.auth.AuthUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SessionManager {
 
     public static final String AUTH_USER_ID = "authUserId";
